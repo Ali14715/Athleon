@@ -1,0 +1,49 @@
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\Banner;
+use Illuminate\Database\Seeder;
+
+class BannerSeeder extends Seeder
+{
+    /**
+     * Run the database seeds.
+     */
+    public function run(): void
+    {
+        $banners = [
+            [
+                'title' => 'Koleksi Sepatu Terbaru',
+                'description' => 'Dapatkan sepatu olahraga terbaru dengan diskon hingga 50%',
+                'image_url' => 'placeholder.png',
+                'link_url' => 'http://127.0.0.1:8000/catalog',
+                'button_text' => 'Belanja Sekarang',
+                'is_active' => true,
+                'order' => 1,
+            ],
+            [
+                'title' => 'Pakaian Olahraga Premium',
+                'description' => 'Koleksi pakaian olahraga berkualitas tinggi',
+                'image_url' => 'placeholder.png',
+                'link_url' => 'http://127.0.0.1:8000/catalog',
+                'button_text' => 'Lihat Koleksi',
+                'is_active' => true,
+                'order' => 2,
+            ],
+            [
+                'title' => 'Perlengkapan Fitness',
+                'description' => 'Lengkapi home gym Anda dengan alat fitness terbaik',
+                'image_url' => 'placeholder.png',
+                'link_url' => 'http://127.0.0.1:8000/catalog',
+                'button_text' => 'Explore',
+                'is_active' => true,
+                'order' => 3,
+            ],
+        ];
+
+        foreach ($banners as $banner) {
+            Banner::create($banner);
+        }
+    }
+}

@@ -32,7 +32,8 @@ class AlamatController extends Controller
                 
                 $areaId = $this->getAreaIdFromBiteship(
                     $address->kelurahan ?? $address->kecamatan,
-                    $address->kota
+                    $address->kota,
+                    $address->kecamatan
                 );
                 
                 if ($areaId) {
@@ -135,7 +136,8 @@ class AlamatController extends Controller
             
             $areaId = $this->getAreaIdFromBiteship(
                 $request->kelurahan ?? $request->kecamatan,
-                $request->kota
+                $request->kota,
+                $request->kecamatan
             );
             
             Log::info('Biteship area_id result for new address', ['area_id' => $areaId]);
@@ -234,7 +236,8 @@ class AlamatController extends Controller
             // Try to get area_id from Biteship
             $areaIdToSave = $this->getAreaIdFromBiteship(
                 $kelurahan ?? $kecamatan,
-                $kota
+                $kota,
+                $kecamatan
             );
             
             Log::info('Biteship fetch completed', [
@@ -361,25 +364,46 @@ class AlamatController extends Controller
     /**
      * Get area_id from Biteship API based on location
      */
-    private function getAreaIdFromBiteship(string $searchQuery, string $city): ?string
+    private function getAreaIdFromBiteship(string $searchQuery, string $city, ?string $kecamatan = null): ?string
     {
         try {
             Log::info('getAreaIdFromBiteship called', [
                 'searchQuery' => $searchQuery,
-                'city' => $city
+                'city' => $city,
+                'kecamatan' => $kecamatan
             ]);
             
             $biteshipService = app(BiteshipService::class);
             
-            // Try multiple search strategies
-            $searchPatterns = [
-                // Pattern 1: kelurahan/kecamatan + city (most specific)
-                trim($searchQuery . ', ' . $city),
-                // Pattern 2: just the city (fallback)
-                trim($city),
-                // Pattern 3: kecamatan only (if searchQuery is different from city)
-                trim($searchQuery)
-            ];
+            // Normalize city name - remove "Kabupaten", "Kota", "Kota Administrasi" prefixes
+            $normalizedCity = trim(preg_replace('/^(Kabupaten|Kota Administrasi|Kota)\s+/i', '', $city));
+            
+            // Try multiple search strategies with variations
+            $searchPatterns = [];
+            
+            // If we have kecamatan, try it with kelurahan
+            if ($kecamatan) {
+                $searchPatterns[] = trim($searchQuery . ', ' . $kecamatan . ', ' . $normalizedCity);
+                $searchPatterns[] = trim($kecamatan . ', ' . $normalizedCity);
+                $searchPatterns[] = trim($kecamatan);
+            }
+            
+            // Standard patterns
+            $searchPatterns[] = trim($searchQuery . ', ' . $normalizedCity);
+            $searchPatterns[] = trim($searchQuery . ', ' . $city);
+            $searchPatterns[] = $normalizedCity;
+            $searchPatterns[] = trim($city);
+            $searchPatterns[] = trim($searchQuery);
+            
+            // Try with "Kota" prefix if not already there
+            if (stripos($city, 'Kota') === false && stripos($city, 'Kabupaten') === false) {
+                $searchPatterns[] = 'Kota ' . $normalizedCity;
+            }
+            
+            // Remove null, empty, and duplicate patterns
+            $searchPatterns = array_values(array_unique(array_filter($searchPatterns, function($p) {
+                return !empty($p);
+            })));
             
             foreach ($searchPatterns as $index => $pattern) {
                 if (empty($pattern)) continue;
@@ -410,9 +434,40 @@ class AlamatController extends Controller
                 }
             }
 
+            // Last attempt: Try common alternative names for the city
+            $cityAlternatives = [
+                'Serang' => ['Serang', 'Kota Serang', 'Kabupaten Serang'],
+                'Jakarta Selatan' => ['Jakarta Selatan', 'Jaksel', 'South Jakarta'],
+                'Tangerang' => ['Tangerang', 'Kota Tangerang', 'Kabupaten Tangerang'],
+            ];
+            
+            foreach ($cityAlternatives as $key => $alternatives) {
+                if (stripos($city, $key) !== false || stripos($normalizedCity, $key) !== false) {
+                    Log::info('Trying city alternatives', ['alternatives' => $alternatives]);
+                    
+                    foreach ($alternatives as $altCity) {
+                        $result = $biteshipService->searchArea($altCity);
+                        if ($result['success'] && !empty($result['data'])) {
+                            $firstArea = $result['data'][0] ?? null;
+                            if ($firstArea && isset($firstArea['id'])) {
+                                Log::info('Biteship area found via alternative name', [
+                                    'original_city' => $city,
+                                    'alternative_used' => $altCity,
+                                    'area_id' => $firstArea['id'],
+                                    'area_name' => $firstArea['name'] ?? 'N/A'
+                                ]);
+                                return $firstArea['id'];
+                            }
+                        }
+                    }
+                }
+            }
+            
             Log::warning('Biteship area not found after all attempts - RETURNING NULL', [
                 'searchQuery' => $searchQuery,
                 'city' => $city,
+                'kecamatan' => $kecamatan,
+                'normalizedCity' => $normalizedCity,
                 'patterns_tried' => $searchPatterns
             ]);
 
@@ -453,7 +508,8 @@ class AlamatController extends Controller
 
         $areaId = $this->getAreaIdFromBiteship(
             $alamat->kelurahan ?? $alamat->kecamatan,
-            $alamat->kota
+            $alamat->kota,
+            $alamat->kecamatan
         );
 
         if ($areaId) {

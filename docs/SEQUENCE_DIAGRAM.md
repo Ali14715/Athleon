@@ -1,5 +1,16 @@
 # Sequence Diagram
 
+## Recent Updates (Nov 2025)
+
+### Key Flow Improvements
+1. **Checkout Flow**: Added area_id fallback with 3-pattern Biteship search
+2. **Variant Handling**: Cart items load variants dynamically via `loadVariants()` method
+3. **Stock Reduction**: Automatic stock decrease when order status becomes "Dikemas"
+4. **Payment Callback**: Clean callback URL without query parameters for security
+5. **RadioGroup Fix**: Shipping methods use compound keys (courier-service) for unique selection
+
+---
+
 ## 1. Customer Registration & Login Flow
 
 ```mermaid
@@ -123,26 +134,29 @@ sequenceDiagram
     Customer->>Frontend: Confirm/change address
     Frontend->>Frontend: Check if address has area_id
     alt area_id is null
+        Frontend-->>Customer: Show warning message
         Frontend->>AlamatController: GET /customer/alamat (auto-fix)
-        AlamatController->>Biteship: Search area by location
+        AlamatController->>Biteship: Search area (3-pattern fallback)<br/>1. Kelurahan + Kota<br/>2. Kota only<br/>3. Kelurahan only
         Biteship-->>AlamatController: area_id found
         AlamatController->>Database: Update address.area_id
         AlamatController-->>Frontend: Updated address list
     end
     Frontend->>CheckoutController: POST /customer/checkout/shipping-rates<br/>{destination_area_id}
     CheckoutController->>Database: Get cart items
+    CheckoutController->>CheckoutController: Load variants with loadVariants()<br/>(handles products without variants)
     CheckoutController->>CheckoutController: Prepare shipping payload
     CheckoutController->>Biteship: Calculate shipping rates
     Biteship-->>CheckoutController: Shipping options
     CheckoutController-->>Frontend: Available couriers + prices
-    Frontend-->>Customer: Display shipping options<br/>(Note: Ensure radio button for single courier)
+    Frontend-->>Customer: Display shipping options<br/>(RadioGroup with unique compound keys)
     
     Note over Customer,Midtrans: Create Order
     Customer->>Frontend: Select courier + payment method
     Frontend->>CheckoutController: POST /customer/checkout/process<br/>{address, courier, payment_method}
     CheckoutController->>Database: Start transaction
-    CheckoutController->>Database: Create order
-    CheckoutController->>Database: Copy cart items to order_items
+    CheckoutController->>Database: Create order (status=Belum Dibayar)
+    CheckoutController->>CheckoutController: Load variants for each cart item<br/>(handles products with/without variants)
+    CheckoutController->>Database: Copy cart items to order_items<br/>(with variant details)
     CheckoutController->>Database: Clear cart
     CheckoutController->>Database: Create payment record (status=pending)
     Database-->>CheckoutController: Order created
@@ -150,8 +164,8 @@ sequenceDiagram
     Note over Customer,Midtrans: Generate Payment Token
     CheckoutController->>PaymentController: Create Snap Token
     PaymentController->>Database: Get order details
-    PaymentController->>PaymentController: Prepare transaction data
-    PaymentController->>Midtrans: Request Snap Token
+    PaymentController->>PaymentController: Prepare transaction data<br/>(with clean callback URL: /orders)
+    PaymentController->>Midtrans: Request Snap Token<br/>(no query params in callback)
     Midtrans-->>PaymentController: Snap Token
     PaymentController->>Database: Update payment.snap_token
     PaymentController-->>CheckoutController: Snap Token
@@ -220,6 +234,7 @@ sequenceDiagram
         Frontend-->>Admin: Show error
     else Status valid
         AdminPesananController->>Database: Update order.status = Dikemas
+        AdminPesananController->>Database: Reduce product stock automatically<br/>(triggered by status change)
         AdminPesananController->>Database: Create pengiriman record
         Database-->>AdminPesananController: Updated
         AdminPesananController->>NotificationSystem: Trigger notification

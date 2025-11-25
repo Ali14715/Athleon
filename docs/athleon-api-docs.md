@@ -389,7 +389,6 @@ erDiagram
         decimal total_harga
         decimal ongkir
         enum status
-        tinyint stok_dikurangi
         text alamat_pengiriman
         string metode_pembayaran
         string metode_pengiriman

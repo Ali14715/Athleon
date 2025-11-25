@@ -2,6 +2,13 @@
 
 This document describes the state transitions for key entities in the Athleon e-commerce system.
 
+## Recent Updates (Nov 2025)
+
+### State Transition Changes
+1. **Stock Management**: Product stock automatically reduced when order transitions to "Dikemas" status
+2. **Payment Webhook**: Status updates triggered by Midtrans webhook with signature verification
+3. **Frontend Display**: Order IDs shown in ATH{4digit}{3digit} format (e.g., ATH0007123)
+
 ---
 
 ## 1. Order Status State Diagram
@@ -38,6 +45,7 @@ stateDiagram-v2
     note right of Dikemas
         Being prepared
         for shipment
+        Stock automatically reduced
     end note
     
     note right of Dikirim
@@ -62,7 +70,7 @@ stateDiagram-v2
 |--------|-------------|-----------------|-------------|
 | **Belum Dibayar** | Order created, awaiting payment | - Cancel order<br/>- Make payment | Sudah Dibayar, Dibatalkan |
 | **Sudah Dibayar** | Payment confirmed by Midtrans | - Pack order (admin)<br/>- Cancel & refund (admin) | Dikemas, Dibatalkan |
-| **Dikemas** | Order being prepared for shipping | - Ship order (admin)<br/>- Cancel & refund (admin) | Dikirim, Dibatalkan |
+| **Dikemas** | Order being prepared for shipping<br/>**Stock automatically reduced** | - Ship order (admin)<br/>- Cancel & refund (admin) | Dikirim, Dibatalkan |
 | **Dikirim** | Package shipped to customer | - Track package<br/>- Confirm receipt<br/>- Report issue | Selesai, Dibatalkan |
 | **Selesai** | Order completed successfully | - Rate & review products<br/>- Reorder | [Final State] |
 | **Dibatalkan** | Order cancelled | - View cancellation reason<br/>- Check refund status | [Final State] |

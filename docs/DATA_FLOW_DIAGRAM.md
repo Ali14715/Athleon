@@ -1,5 +1,16 @@
 # Data Flow Diagram (DFD)
 
+## Recent Updates (Nov 2025)
+
+### Key Improvements
+1. **Variant Handling**: Products with/without variants handled via `loadVariants()` method
+2. **Area ID Fallback**: 3-pattern search (Kelurahan+Kota, Kota, Kelurahan) for missing area_id
+3. **Stock Management**: Automatic stock reduction when order status changes to "Dikemas"
+4. **Security**: Clean callback URLs (no query params), encrypted product IDs in frontend
+5. **UI Consistency**: Order IDs displayed as ATH{4digit}{3digit} format in frontend
+
+---
+
 ## Level 0: Context Diagram
 
 ```mermaid
@@ -150,7 +161,7 @@ flowchart TB
     
     P2.2 -->|Check/Create Cart| DB_Keranjang
     P2.2 -->|Get Price| DB_Produk
-    P2.2 -->|Get Variant Price| DB_Varian
+    P2.2 -->|Load Variants via loadVariants| DB_Varian
     P2.2 -->|Insert Item| DB_ItemKeranjang
     
     P2.3 -->|Update Qty| DB_ItemKeranjang
@@ -185,11 +196,15 @@ flowchart TB
     
     Customer -->|Select| P3.1
     P3.1 -->|Get Addresses| DB_Alamat
+    P3.1 -->|Check area_id| P3.1
+    P3.1 -->|If null: 3-pattern search| Biteship
+    Biteship -->|area_id found| P3.1
+    P3.1 -->|Update area_id| DB_Alamat
     P3.1 -->|Chosen Address| P3.2
     
     P3.2 -->|Area ID + Items| Biteship
     Biteship -->|Shipping Options| P3.2
-    P3.2 -->|Display Options| Customer
+    P3.2 -->|Display with unique keys| Customer
     
     Customer -->|Choose Courier| P3.3
     P3.3 -->|Save Choice| P3.4
@@ -198,11 +213,12 @@ flowchart TB
     P3.4 -->|Create| P3.5
     
     P3.5 -->|Insert Order| DB_Pesanan
-    P3.5 -->|Copy Cart Items| DB_ItemPesanan
+    P3.5 -->|Load variants for items| DB_Varian
+    P3.5 -->|Copy Cart Items with variants| DB_ItemPesanan
     P3.5 -->|Order Created| P3.6
     
     P3.6 -->|Create Payment Record| DB_Pembayaran
-    P3.6 -->|Request Token| Midtrans
+    P3.6 -->|Request Token with clean callback| Midtrans
     Midtrans -->|Snap Token| P3.6
     P3.6 -->|Token| Customer
     
@@ -245,6 +261,7 @@ flowchart TB
     
     Admin -->|Mark Packed| P4.3
     P4.3 -->|Status = Dikemas| DB_Pesanan
+    P4.3 -->|Auto Reduce Stock| DB_Produk
     P4.3 -->|Create Record| DB_Pengiriman
     P4.3 -->|Notify| NotifSystem
     

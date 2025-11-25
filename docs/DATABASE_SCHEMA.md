@@ -293,6 +293,8 @@ Order dari customer.
 - Status default: 'Belum Dibayar'
 - Pesanan hanya bisa dibatalkan jika status 'Belum Dibayar' atau 'Sudah Dibayar'
 - Tracking number wajib diisi saat status 'Dikirim'
+- Stok produk otomatis dikurangi saat status berubah ke 'Dikemas'
+- UI menampilkan order ID dalam format ATH{id_4digit}{timestamp_3digit} untuk keamanan
 
 **Indexes:**
 - PRIMARY KEY (id)
@@ -328,6 +330,8 @@ Item dalam pesanan.
 - Snapshot nama dan harga produk untuk history
 - Rating hanya bisa diberikan setelah pesanan 'Selesai'
 - Subtotal = (harga_satuan + harga_varian) * jumlah
+- Varian handling menggunakan loadVariants() method untuk produk tanpa varian
+- Produk bisa memiliki 0 atau lebih varian, sistem handle keduanya
 
 **Indexes:**
 - PRIMARY KEY (id)

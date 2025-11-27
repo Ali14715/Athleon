@@ -31,8 +31,11 @@ const Catalog = () => {
     fetch('/api/kategori')
       .then(res => res.json())
       .then(data => {
-        if (data.success) {
-          setCategories(data.data || []);
+        // Handle new API format: { status_code, message, data }
+        if (data.status_code === 200 || data.success) {
+          // data.data is the array directly in new format
+          const categoriesData = Array.isArray(data.data) ? data.data : [];
+          setCategories(categoriesData);
         }
       })
       .catch(err => console.error('Failed to fetch categories:', err));
@@ -158,13 +161,13 @@ const Catalog = () => {
           {/* Filters Panel (Collapsible) */}
           {showFilters && (
             <div className="mb-6 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg rounded-xl overflow-hidden animate-in slide-in-from-top-2 duration-300">
-              <div className="p-5 md:p-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="p-4 md:p-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                       Kategori
                     </label>
-                    <select className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg font-medium focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all" value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
+                    <select className="w-full px-3 md:px-4 py-2 md:py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg text-sm md:text-base font-medium focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all" value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
                       <option value="all">Semua Kategori</option>
                       {categories.map(cat => (
                         <option key={cat.id} value={cat.nama}>{cat.nama}</option>
@@ -176,14 +179,14 @@ const Catalog = () => {
                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                       Gender
                     </label>
-                    <select className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg font-medium focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all" value={selectedGender} onChange={(e) => setSelectedGender(e.target.value)}>
+                    <select className="w-full px-3 md:px-4 py-2 md:py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg text-sm md:text-base font-medium focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all" value={selectedGender} onChange={(e) => setSelectedGender(e.target.value)}>
                       <option value="all">Semua</option>
                       <option value="pria">Pria</option>
                       <option value="wanita">Wanita</option>
                     </select>
                   </div>
 
-                  <div>
+                  <div className="sm:col-span-2 lg:col-span-1">
                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                       Harga: <span className="text-emerald-600 dark:text-emerald-400 font-bold">Rp {priceRange[0].toLocaleString()} - Rp {priceRange[1].toLocaleString()}</span>
                     </label>

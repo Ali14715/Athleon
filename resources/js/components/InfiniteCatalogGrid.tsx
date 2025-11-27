@@ -61,8 +61,9 @@ const InfiniteCatalogGrid = ({
     return typeof kategori === 'string' ? kategori : kategori.nama;
   };
 
-  const fetchProducts = useCallback(async (pageNum: number) => {
-    if (loading || !hasMore) return;
+  const fetchProducts = useCallback(async (pageNum: number, isReset: boolean = false) => {
+    // Only check loading state for non-reset calls (pagination)
+    if (!isReset && loading) return;
     
     setLoading(true);
     try {
@@ -94,34 +95,39 @@ const InfiniteCatalogGrid = ({
       
       if (productsData.length === 0) {
         setHasMore(false);
+        if (isReset) {
+          setProducts([]);
+        }
       } else {
         setProducts(prev => {
-          const newProducts = pageNum === 1 ? productsData : [...prev, ...productsData];
+          // For reset, always replace all products
+          const newProducts = (pageNum === 1 || isReset) ? productsData : [...prev, ...productsData];
           return newProducts;
         });
         
         // Check if we got less than expected
         const perPage = response.data?.data?.per_page || 12;
-        if (productsData.length < perPage) {
-          setHasMore(false);
-        }
+        setHasMore(productsData.length >= perPage);
       }
     } catch (error) {
       console.error("Error fetching products:", error);
       setHasMore(false);
     } finally {
       setLoading(false);
-      if (pageNum === 1) setInitialLoading(false);
+      setInitialLoading(false);
     }
-  }, [loading, hasMore, selectedCategory, selectedGender, priceRange, sortBy, searchQuery]);
+  }, [selectedCategory, selectedGender, priceRange, sortBy, searchQuery]);
 
   // Reset on filter change
   useEffect(() => {
+    // Reset states
     setProducts([]);
     setPage(1);
     setHasMore(true);
     setInitialLoading(true);
-    fetchProducts(1);
+    
+    // Fetch with isReset=true to bypass loading check
+    fetchProducts(1, true);
   }, [selectedCategory, selectedGender, priceRange[0], priceRange[1], sortBy, searchQuery]);
 
   // Intersection Observer for infinite scroll
@@ -147,10 +153,10 @@ const InfiniteCatalogGrid = ({
     };
   }, [hasMore, loading, initialLoading]);
 
-  // Fetch next page
+  // Fetch next page (for pagination only)
   useEffect(() => {
-    if (page > 1) {
-      fetchProducts(page);
+    if (page > 1 && !loading) {
+      fetchProducts(page, false);
     }
   }, [page]);
 

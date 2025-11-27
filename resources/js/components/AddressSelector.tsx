@@ -21,7 +21,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Plus, MapPin, Trash2, Check, Edit3 } from "lucide-react";
 import { toast } from "sonner";
-import api from "@/lib/api";
+import api, { isSuccess, getData, getErrorMessage } from "@/lib/api";
 
 interface Address {
   id: number;
@@ -99,8 +99,8 @@ export default function AddressSelector({
   const [loadingCities, setLoadingCities] = useState(false);
   const [loadingDistricts, setLoadingDistricts] = useState(false);
   const [loadingVillages, setLoadingVillages] = useState(false);
-  const [selectedProvinceCode, setSelectedProvinceCode] = useState<string>("");
-  const [selectedCityCode, setSelectedCityCode] = useState<string>("");
+  const [, setSelectedProvinceCode] = useState<string>("");
+  const [, setSelectedCityCode] = useState<string>("");
   const [selectedDistrictCode, setSelectedDistrictCode] = useState<string>("");
 
   useEffect(() => {
@@ -111,12 +111,13 @@ export default function AddressSelector({
   const fetchAddresses = async () => {
     try {
       const response = await api.get("/api/customer/alamat");
-      if (response.data.success) {
-        setAddresses(response.data.data);
+      if (isSuccess(response)) {
+        const addressData = getData(response) as Address[];
+        setAddresses(addressData);
         
         // Auto-select default address if no selection
         if (!selectedId) {
-          const defaultAddr = response.data.data.find((a: Address) => a.is_default);
+          const defaultAddr = addressData.find((a: Address) => a.is_default);
           if (defaultAddr) {
             setSelectedId(defaultAddr.id);
             onSelectAddress(defaultAddr);
@@ -136,10 +137,11 @@ export default function AddressSelector({
   const fetchProvinces = async () => {
     try {
       const response = await api.get("/api/wilayah/provinces");
+      // Handle new API format: { status_code, message, data }
+      const responseData = response.data?.data || response.data;
+      const provincesData = Array.isArray(responseData) ? responseData : (responseData?.data || []);
       
-      if (response.data?.data) {
-        setProvinces(response.data.data);
-      }
+      setProvinces(provincesData);
     } catch (error) {
       console.error("Error fetching provinces:", error);
       toast.error("Gagal memuat data provinsi");
@@ -154,13 +156,14 @@ export default function AddressSelector({
     
     try {
       const response = await api.get(`/api/wilayah/cities/${provinceCode}`);
+      // Handle new API format: { status_code, message, data }
+      const responseData = response.data?.data || response.data;
+      const citiesData = Array.isArray(responseData) ? responseData : (responseData?.data || []);
       
-      if (response.data?.data) {
-        setCities(response.data.data);
-        
-        if (response.data.data.length === 0) {
-          toast.info("Tidak ada data kota untuk provinsi ini");
-        }
+      setCities(citiesData);
+      
+      if (citiesData.length === 0) {
+        toast.info("Tidak ada data kota untuk provinsi ini");
       }
     } catch (error) {
       console.error("Error fetching cities:", error);
@@ -177,19 +180,14 @@ export default function AddressSelector({
     
     try {
       const response = await api.get(`/api/wilayah/districts/${cityCode}`);
-      console.log('Districts response:', response.data);
+      // Handle new API format: { status_code, message, data }
+      const responseData = response.data?.data || response.data;
+      const districtsData = Array.isArray(responseData) ? responseData : (responseData?.data || []);
       
-      if (response.data?.data) {
-        setDistricts(response.data.data);
-        if (response.data.data.length === 0) {
-          toast.info("Tidak ada data kecamatan untuk kota ini");
-        }
-      } else if (Array.isArray(response.data)) {
-        // Handle if response.data is directly an array
-        setDistricts(response.data);
-        if (response.data.length === 0) {
-          toast.info("Tidak ada data kecamatan untuk kota ini");
-        }
+      setDistricts(districtsData);
+      
+      if (districtsData.length === 0) {
+        toast.info("Tidak ada data kecamatan untuk kota ini");
       }
     } catch (error) {
       console.error("Error fetching districts:", error);
@@ -205,10 +203,11 @@ export default function AddressSelector({
     
     try {
       const response = await api.get(`/api/wilayah/villages/${districtCode}`);
+      // Handle new API format: { status_code, message, data }
+      const responseData = response.data?.data || response.data;
+      const villagesData = Array.isArray(responseData) ? responseData : (responseData?.data || []);
       
-      if (response.data?.data) {
-        setVillages(response.data.data);
-      }
+      setVillages(villagesData);
     } catch (error) {
       console.error("Error fetching villages:", error);
       toast.error("Gagal memuat data kelurahan/desa");
@@ -322,7 +321,7 @@ export default function AddressSelector({
         response = await api.post("/api/customer/alamat", payload);
       }
 
-      if (response.data.success) {
+      if (isSuccess(response)) {
         toast.success(editingAddressId ? "Alamat berhasil diperbarui" : "Alamat berhasil ditambahkan");
         setIsDialogOpen(false);
         setEditingAddressId(null);
@@ -350,7 +349,7 @@ export default function AddressSelector({
       }
     } catch (error: any) {
       console.error("Error:", error);
-      toast.error(error.response?.data?.message || "Gagal menambahkan alamat");
+      toast.error(getErrorMessage(error));
     } finally {
       setIsLoading(false);
     }
@@ -361,7 +360,7 @@ export default function AddressSelector({
 
     try {
       const response = await api.delete(`/api/customer/alamat/${id}`);
-      if (response.data.success) {
+      if (isSuccess(response)) {
         toast.success("Alamat berhasil dihapus");
         fetchAddresses();
         if (selectedId === id) {
@@ -370,19 +369,19 @@ export default function AddressSelector({
         }
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Gagal menghapus alamat");
+      toast.error(getErrorMessage(error));
     }
   };
 
   const handleSetDefault = async (id: number) => {
     try {
       const response = await api.post(`/api/customer/alamat/${id}/set-default`);
-      if (response.data.success) {
+      if (isSuccess(response)) {
         toast.success("Alamat default berhasil diubah");
         fetchAddresses();
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Gagal mengubah alamat default");
+      toast.error(getErrorMessage(error));
     }
   };
 

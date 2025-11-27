@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, router } from "@inertiajs/react";
 import axios from "axios";
+import { getErrorMessage } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -54,7 +55,7 @@ const ResetPassword = ({ email: initialEmail }: ResetPasswordProps) => {
       setTimeLeft(response.data?.expires_in ?? 600);
     } catch (error: any) {
       console.error("Send OTP error:", error);
-      toast.error(error.response?.data?.message || "Gagal mengirim kode OTP");
+      toast.error(getErrorMessage(error));
     } finally {
       setLoading(false);
     }
@@ -92,7 +93,7 @@ const ResetPassword = ({ email: initialEmail }: ResetPasswordProps) => {
       router.visit("/login");
     } catch (error: any) {
       console.error("Reset password error:", error);
-      toast.error(error.response?.data?.message || "Gagal memperbarui password");
+      toast.error(getErrorMessage(error));
     } finally {
       setLoading(false);
     }
@@ -108,7 +109,7 @@ const ResetPassword = ({ email: initialEmail }: ResetPasswordProps) => {
       setOtp("");
     } catch (error: any) {
       console.error("Resend OTP error:", error);
-      toast.error(error.response?.data?.message || "Gagal mengirim ulang OTP");
+      toast.error(getErrorMessage(error));
     } finally {
       setResendLoading(false);
     }

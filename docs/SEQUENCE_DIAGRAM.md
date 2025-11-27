@@ -3,11 +3,67 @@
 ## Recent Updates (Nov 2025)
 
 ### Key Flow Improvements
-1. **Checkout Flow**: Added area_id fallback with 3-pattern Biteship search
-2. **Variant Handling**: Cart items load variants dynamically via `loadVariants()` method
-3. **Stock Reduction**: Automatic stock decrease when order status becomes "Dikemas"
-4. **Payment Callback**: Clean callback URL without query parameters for security
-5. **RadioGroup Fix**: Shipping methods use compound keys (courier-service) for unique selection
+1. **API Response Standardization**: All endpoints now return `{ status_code, message, data }` format
+2. **JWT Auto-Refresh**: Automatic token refresh when expired, with request queuing
+3. **Checkout Flow**: Added area_id fallback with 3-pattern Biteship search
+4. **Variant Handling**: Cart items load variants dynamically via `loadVariants()` method
+5. **Stock Reduction**: Automatic stock decrease when order status becomes "Dikemas"
+6. **Payment Callback**: Clean callback URL without query parameters for security
+7. **RadioGroup Fix**: Shipping methods use compound keys (courier-service) for unique selection
+
+---
+
+## 0. JWT Token Refresh Flow (NEW)
+
+```mermaid
+sequenceDiagram
+    actor Client
+    participant Interceptor as Axios Interceptor
+    participant API
+    participant AuthController
+    participant JWT
+    
+    Note over Client,JWT: Auto Token Refresh Flow
+    Client->>Interceptor: API Request with expired token
+    Interceptor->>API: Request with Bearer token
+    API-->>Interceptor: 401 "Token expired"
+    
+    alt Token Expired (not invalid)
+        Interceptor->>Interceptor: Set isRefreshing = true
+        Interceptor->>AuthController: POST /auth/refresh
+        AuthController->>JWT: Refresh token
+        alt Refresh Success
+            JWT-->>AuthController: New JWT token
+            AuthController-->>Interceptor: { status_code: 200, data: { token, user } }
+            Interceptor->>Interceptor: Store new token in localStorage
+            Interceptor->>Interceptor: Notify queued requests
+            Interceptor->>API: Retry original request with new token
+            API-->>Interceptor: Success response
+            Interceptor-->>Client: Response data
+        else Refresh Failed
+            JWT-->>AuthController: Refresh token expired
+            AuthController-->>Interceptor: 401 Error
+            Interceptor->>Interceptor: Clear localStorage
+            Interceptor->>Interceptor: Redirect to /login
+            Interceptor-->>Client: Session expired toast
+        end
+    else Token Invalid
+        Interceptor->>Interceptor: Clear localStorage
+        Interceptor->>Interceptor: Redirect to /login
+        Interceptor-->>Client: Session expired toast
+    end
+    
+    Note over Client,JWT: Concurrent Requests During Refresh
+    Client->>Interceptor: Request A (token expired)
+    Interceptor->>AuthController: POST /auth/refresh
+    Client->>Interceptor: Request B (same expired token)
+    Interceptor->>Interceptor: Add to refreshSubscribers queue
+    Client->>Interceptor: Request C (same expired token)
+    Interceptor->>Interceptor: Add to refreshSubscribers queue
+    AuthController-->>Interceptor: New token
+    Interceptor->>Interceptor: Execute all queued requests with new token
+    Interceptor-->>Client: Response A, B, C
+```
 
 ---
 

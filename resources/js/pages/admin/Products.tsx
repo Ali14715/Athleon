@@ -31,7 +31,7 @@ import {
   GripVertical,
 } from "lucide-react";
 import { toast } from "sonner";
-import api from "@/lib/api";
+import api, { isSuccess, getErrorMessage } from "@/lib/api";
 
 type GalleryItem =
   | { id: string; kind: "existing"; url: string }
@@ -164,7 +164,7 @@ const AdminProducts = () => {
         let productsData = [];
         let paginationData = null;
 
-        if (response.data.success) {
+        if (isSuccess(response)) {
           // API returns { success: true, data: [...], pagination: {...} }
           productsData = response.data.data || [];
           paginationData = response.data.pagination || null;
@@ -582,7 +582,7 @@ const AdminProducts = () => {
       await fetchProducts(page, search);
     } catch (error: any) {
       console.error("Error submitting product:", error);
-      toast.error(error.response?.data?.message || "Gagal menyimpan produk");
+      toast.error(getErrorMessage(error));
     } finally {
       setSubmitting(false);
     }

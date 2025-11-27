@@ -21,10 +21,7 @@ class KeranjangController extends Controller
         try {
             $user = Auth::user();
             if (!$user) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Unauthorized'
-                ], 401);
+                return $this->unauthorizedResponse('Unauthorized');
             }
 
             $keranjang = Keranjang::with(['items.produk', 'items.varian'])
@@ -32,11 +29,7 @@ class KeranjangController extends Controller
                 ->first();
 
             if (!$keranjang) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Keranjang kosong',
-                    'data' => []
-                ]);
+                return $this->successResponse([], 'Keranjang kosong');
             }
 
             // Load multiple variants for each item
@@ -46,16 +39,9 @@ class KeranjangController extends Controller
                 }
             }
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Data keranjang ditemukan',
-                'data' => $keranjang
-            ]);
+            return $this->successResponse($keranjang, 'Data keranjang ditemukan');
         } catch (Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Internal server error: ' . $e->getMessage(),
-            ], 500);
+            return $this->serverErrorResponse('Internal server error: ' . $e->getMessage());
         }
     }
 
@@ -67,7 +53,7 @@ class KeranjangController extends Controller
         try {
             $user = Auth::user();
             if (!$user) {
-                return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+                return $this->unauthorizedResponse('Unauthorized');
             }
 
             $validated = $request->validate([
@@ -80,15 +66,12 @@ class KeranjangController extends Controller
 
             $produk = Produk::find($validated['produk_id']);
             if (!$produk) {
-                return response()->json(['success' => false, 'message' => 'Produk tidak ditemukan'], 404);
+                return $this->notFoundResponse('Produk tidak ditemukan');
             }
 
             // Jika stok 0 atau tidak ada, anggap unlimited stock
             if ($produk->stok > 0 && $validated['jumlah'] > $produk->stok) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Stok produk tidak mencukupi. Stok tersedia: ' . $produk->stok
-                ], 422);
+                return $this->validationErrorResponse(null, 'Stok produk tidak mencukupi. Stok tersedia: ' . $produk->stok);
             }
 
             DB::beginTransaction();
@@ -104,20 +87,14 @@ class KeranjangController extends Controller
                     ->get();
                 
                 if ($varians->count() !== count($varianIds)) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Satu atau lebih varian tidak ditemukan'
-                    ], 404);
+                    return $this->notFoundResponse('Satu atau lebih varian tidak ditemukan');
                 }
                 
                 // Build variant label and calculate price
                 $labels = [];
                 foreach ($varians as $v) {
                     if ($v->stok > 0 && $validated['jumlah'] > $v->stok) {
-                        return response()->json([
-                            'success' => false,
-                            'message' => "Stok varian {$v->nilai_varian} tidak mencukupi. Stok tersedia: {$v->stok}"
-                        ], 422);
+                        return $this->validationErrorResponse(null, "Stok varian {$v->nilai_varian} tidak mencukupi. Stok tersedia: {$v->stok}");
                     }
                     $hargaFinal += $v->harga_tambahan;
                     $labels[] = $v->nama_varian . ': ' . $v->nilai_varian;
@@ -164,23 +141,12 @@ class KeranjangController extends Controller
 
             DB::commit();
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Produk berhasil ditambahkan ke keranjang',
-                'data' => $item
-            ], 201);
+            return $this->createdResponse($item, 'Produk berhasil ditambahkan ke keranjang');
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validasi gagal',
-                'errors' => $e->errors()
-            ], 422);
+            return $this->validationErrorResponse($e->errors(), 'Validasi gagal');
         } catch (Exception $e) {
             DB::rollBack();
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan server: ' . $e->getMessage(),
-            ], 500);
+            return $this->serverErrorResponse('Terjadi kesalahan server: ' . $e->getMessage());
         }
     }
 
@@ -192,7 +158,7 @@ class KeranjangController extends Controller
         try {
             $user = Auth::user();
             if (!$user) {
-                return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+                return $this->unauthorizedResponse('Unauthorized');
             }
 
             $validated = $request->validate([
@@ -204,7 +170,7 @@ class KeranjangController extends Controller
 
             $item = ItemKeranjang::find($id);
             if (!$item) {
-                return response()->json(['success' => false, 'message' => 'Item keranjang tidak ditemukan'], 404);
+                return $this->notFoundResponse('Item keranjang tidak ditemukan');
             }
 
             $produk = Produk::find($item->produk_id);
@@ -227,19 +193,13 @@ class KeranjangController extends Controller
                     ->get();
                 
                 if ($varians->count() !== count($varianIds)) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Satu atau lebih varian tidak ditemukan'
-                    ], 404);
+                    return $this->notFoundResponse('Satu atau lebih varian tidak ditemukan');
                 }
                 
                 $labels = [];
                 foreach ($varians as $v) {
                     if ($v->stok > 0 && $validated['jumlah'] > $v->stok) {
-                        return response()->json([
-                            'success' => false,
-                            'message' => "Stok varian {$v->nilai_varian} tidak mencukupi. Stok tersedia: {$v->stok}"
-                        ], 422);
+                        return $this->validationErrorResponse(null, "Stok varian {$v->nilai_varian} tidak mencukupi. Stok tersedia: {$v->stok}");
                     }
                     $hargaFinal += $v->harga_tambahan;
                     $labels[] = $v->nama_varian . ': ' . $v->nilai_varian;
@@ -252,10 +212,7 @@ class KeranjangController extends Controller
                     $item->harga_varian = $hargaFinal;
                 }
             } else if ($produk->stok > 0 && $validated['jumlah'] > $produk->stok) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Stok produk tidak mencukupi. Stok tersedia: ' . $produk->stok
-                ], 422);
+                return $this->validationErrorResponse(null, 'Stok produk tidak mencukupi. Stok tersedia: ' . $produk->stok);
             }
 
             $item->jumlah = $validated['jumlah'];
@@ -272,22 +229,11 @@ class KeranjangController extends Controller
                 $item->varians = \App\Models\ProdukVarian::whereIn('id', $item->varian_ids)->get();
             }
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Item berhasil diperbarui',
-                'data' => $item
-            ]);
+            return $this->successResponse($item, 'Item berhasil diperbarui');
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validasi gagal',
-                'errors' => $e->errors()
-            ], 422);
+            return $this->validationErrorResponse($e->errors(), 'Validasi gagal');
         } catch (Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan server: ' . $e->getMessage(),
-            ], 500);
+            return $this->serverErrorResponse('Terjadi kesalahan server: ' . $e->getMessage());
         }
     }
 
@@ -299,12 +245,12 @@ class KeranjangController extends Controller
         try {
             $user = Auth::user();
             if (!$user) {
-                return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+                return $this->unauthorizedResponse('Unauthorized');
             }
 
             $item = ItemKeranjang::find($id);
             if (!$item) {
-                return response()->json(['success' => false, 'message' => 'Item keranjang tidak ditemukan'], 404);
+                return $this->notFoundResponse('Item keranjang tidak ditemukan');
             }
 
             $keranjang = Keranjang::find($item->keranjang_id);
@@ -313,15 +259,9 @@ class KeranjangController extends Controller
             $keranjang->total_harga = ItemKeranjang::where('keranjang_id', $keranjang->id)->sum('subtotal');
             $keranjang->save();
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Item berhasil dihapus dari keranjang'
-            ]);
+            return $this->successResponse(null, 'Item berhasil dihapus dari keranjang');
         } catch (Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan server: ' . $e->getMessage(),
-            ], 500);
+            return $this->serverErrorResponse('Terjadi kesalahan server: ' . $e->getMessage());
         }
     }
 
@@ -333,7 +273,7 @@ class KeranjangController extends Controller
         try {
             $user = Auth::user();
             if (!$user) {
-                return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+                return $this->unauthorizedResponse('Unauthorized');
             }
 
             $validated = $request->validate([
@@ -345,15 +285,12 @@ class KeranjangController extends Controller
 
             $produk = Produk::with(['varians'])->find($validated['produk_id']);
             if (!$produk) {
-                return response()->json(['success' => false, 'message' => 'Produk tidak ditemukan'], 404);
+                return $this->notFoundResponse('Produk tidak ditemukan');
             }
 
             // Check stock
             if ($produk->stok > 0 && $validated['jumlah'] > $produk->stok) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Stok produk tidak mencukupi. Stok tersedia: ' . $produk->stok
-                ], 422);
+                return $this->validationErrorResponse(null, 'Stok produk tidak mencukupi. Stok tersedia: ' . $produk->stok);
             }
 
             $hargaFinal = $produk->harga;
@@ -382,16 +319,9 @@ class KeranjangController extends Controller
                 'subtotal' => $subtotal,
             ];
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Produk siap untuk checkout',
-                'data' => $item
-            ]);
+            return $this->successResponse($item, 'Produk siap untuk checkout');
         } catch (Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan server: ' . $e->getMessage(),
-            ], 500);
+            return $this->serverErrorResponse('Terjadi kesalahan server: ' . $e->getMessage());
         }
     }
 }

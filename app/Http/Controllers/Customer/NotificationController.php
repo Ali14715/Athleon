@@ -16,10 +16,7 @@ class NotificationController extends Controller
         $user = $request->user();
         
         if (!$user) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized'
-            ], 401);
+            return $this->unauthorizedResponse('Unauthorized');
         }
         
         $perPage = max(1, min((int) $request->get('per_page', 20), 100));
@@ -38,9 +35,8 @@ class NotificationController extends Controller
             ->whereNull('read_at')
             ->count();
 
-        return response()->json([
-            'success' => true,
-            'data' => $notifications->items(),
+        return $this->customResponse(200, 'Notifikasi berhasil diambil', [
+            'notifications' => $notifications->items(),
             'pagination' => [
                 'total' => $notifications->total(),
                 'per_page' => $notifications->perPage(),
@@ -79,11 +75,7 @@ class NotificationController extends Controller
             'sent_at' => now(),
         ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Notifikasi berhasil dibuat',
-            'data' => $notification->load(['pesanan', 'pembayaran']),
-        ], 201);
+        return $this->createdResponse($notification->load(['pesanan', 'pembayaran']), 'Notifikasi berhasil dibuat');
     }
 
     public function markAsRead(Notification $notification)
@@ -91,10 +83,7 @@ class NotificationController extends Controller
         $user = auth()->user();
 
         if ($notification->user_id !== $user->id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Notifikasi tidak ditemukan',
-            ], 404);
+            return $this->notFoundResponse('Notifikasi tidak ditemukan');
         }
 
         $notification->markAsRead();
@@ -102,13 +91,7 @@ class NotificationController extends Controller
             ->whereNull('read_at')
             ->count();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Notifikasi ditandai sebagai dibaca',
-            'meta' => [
-                'unread_count' => $unreadCount,
-            ],
-        ]);
+        return $this->successResponse(['unread_count' => $unreadCount], 'Notifikasi ditandai sebagai dibaca');
     }
 
     public function markAllRead(Request $request)
@@ -123,13 +106,7 @@ class NotificationController extends Controller
             ->whereNull('read_at')
             ->count();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Semua notifikasi ditandai sebagai dibaca',
-            'meta' => [
-                'unread_count' => $unreadCount,
-            ],
-        ]);
+        return $this->successResponse(['unread_count' => $unreadCount], 'Semua notifikasi ditandai sebagai dibaca');
     }
 
     private function assertUserOwnsLinkedRecords(int $userId, array $payload): void

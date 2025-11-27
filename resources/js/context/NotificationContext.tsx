@@ -64,7 +64,9 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
       // Check if user is admin - admin users don't need notifications
       try {
         const userResponse = await api.get("/api/auth/user");
-        if (userResponse.data?.role === "admin") {
+        // Handle new API format: { status_code, message, data }
+        const userData = userResponse.data?.data || userResponse.data;
+        if (userData?.role === "admin") {
           clear();
           setInitialized(true);
           return;
@@ -81,16 +83,28 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
       }
 
       try {
-        const { data } = await api.get("/api/customer/notifications", {
+        const response = await api.get("/api/customer/notifications", {
           params: {
             per_page: options.limit ?? 20,
           },
         });
 
-        const items: NotificationItem[] = Array.isArray(data?.data) ? data.data : [];
+        // Handle new API format: { status_code, message, data: { notifications: [], pagination: {}, meta: {} } }
+        const responseData = response.data?.data || response.data;
+        
+        // API returns data.notifications array, not data.data
+        let items: NotificationItem[] = [];
+        if (Array.isArray(responseData?.notifications)) {
+          items = responseData.notifications;
+        } else if (Array.isArray(responseData?.data)) {
+          items = responseData.data;
+        } else if (Array.isArray(responseData)) {
+          items = responseData;
+        }
         setNotifications(items);
 
-        const unreadFromApi = typeof data?.meta?.unread_count === "number" ? data.meta.unread_count : null;
+        const meta = responseData?.meta || response.data?.meta;
+        const unreadFromApi = typeof meta?.unread_count === "number" ? meta.unread_count : null;
         setUnreadCount(unreadFromApi ?? items.filter((item) => !item.read_at).length);
       } catch (error: any) {
         const status = error?.response?.status;

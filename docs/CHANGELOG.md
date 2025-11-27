@@ -1,5 +1,129 @@
 # Changelog - Athleon E-Commerce
 
+## [2.0.0] - November 27, 2025
+
+### 🚀 Major Update: API Response Standardization
+
+#### Overview
+Standarisasi format response API di seluruh backend dan frontend untuk konsistensi dan kemudahan maintenance.
+
+**New Standard Response Format:**
+```json
+{
+  "status_code": 200,
+  "message": "Success message",
+  "data": { ... }
+}
+```
+
+#### Backend Changes
+
+**ApiResponseTrait (NEW)**
+- Created `app/Traits/ApiResponseTrait.php` with standardized response methods:
+  - `successResponse($data, $message, $statusCode = 200)`
+  - `createdResponse($data, $message)`
+  - `errorResponse($message, $statusCode)`
+  - `unauthorizedResponse($message)`
+  - `forbiddenResponse($message)`
+  - `notFoundResponse($message)`
+  - `validationErrorResponse($errors, $message)`
+  - `badRequestResponse($message)`
+  - `serverErrorResponse($message)`
+
+**Controllers Updated (21+ controllers):**
+- `AuthController.php` - Login, register, refresh, profile, password reset
+- `Admin/BannerController.php`
+- `Admin/DashboardController.php`
+- `Admin/KategoriController.php`
+- `Admin/NotificationController.php`
+- `Admin/PesananController.php`
+- `Admin/ProdukController.php`
+- `Admin/UserController.php`
+- `Customer/AlamatController.php`
+- `Customer/CheckoutController.php`
+- `Customer/KeranjangController.php`
+- `Customer/NotificationController.php`
+- `Customer/PesananController.php`
+- `Customer/WishlistController.php`
+- `BiteshipController.php`
+- `ExportController.php`
+- `PaymentController.php`
+- `ProdukController.php`
+- `TrackingController.php`
+- `WilayahController.php`
+- `Root/BannerController.php`
+- `Root/KategoriController.php`
+- `Root/ProdukController.php`
+
+**JWT Refresh Token (NEW)**
+- Added `refresh()` method in `AuthController.php`
+- Auto-refresh token mechanism when token expires
+- Retry failed requests with new token
+
+#### Frontend Changes
+
+**api.ts Enhancements**
+- Added TypeScript interfaces: `ApiResponse<T>`, `PaginatedResponse<T>`
+- Added helper functions:
+  - `isSuccess(response)` - Check if response successful
+  - `isError(response)` - Check if response has error
+  - `getData(response)` - Extract data from response
+  - `getMessage(response)` - Get message from response
+  - `getStatusCode(response)` - Get status code
+  - `getErrorMessage(error)` - Extract error message from catch block
+  - `getValidationErrors(error)` - Get validation errors object
+- Added backward compatibility interceptor (injects `success` for legacy code)
+- Added auto JWT refresh mechanism with request queuing
+
+**TSX Files Migrated (28+ files):**
+All frontend files updated to use new helper functions instead of `response.data.success`:
+- `pages/Login.tsx` - Fixed token extraction path
+- `pages/Profile.tsx` - User data access pattern
+- `pages/Cart.tsx` - Recommended products handling
+- `pages/Checkout.tsx` - Multiple API calls
+- `pages/Orders.tsx`
+- `pages/OrderDetail.tsx`
+- `pages/ProductDetail.tsx`
+- `pages/Catalog.tsx`
+- `pages/Home.tsx`
+- `pages/Wishlist.tsx`
+- `pages/admin/*.tsx` - All admin pages
+- `components/Navbar.tsx` - fetchUserRole fix
+- `components/AddressSelector.tsx` - Wilayah data fetching
+- `components/BannerCarousel.tsx` - Banners array handling
+- `components/AdminLayout.tsx` - User data access
+- `context/NotificationContext.tsx` - Notifications array handling
+
+### 🐛 Bug Fixes
+
+#### Runtime Errors Fixed
+- **Fixed**: `banners.map is not a function` - Added fallback pattern for array data
+- **Fixed**: `provinces.find is not a function` - Handle nested API response
+- **Fixed**: `Authorization: Bearer undefined` - Validate token before adding header
+- **Fixed**: Token stored as `undefined` - Extract from correct path (`res.data.data.token`)
+- **Fixed**: Notifications showing "Tidak ada notifikasi" - Handle `data.notifications` array
+- **Fixed**: Cart badge not updating - Fixed user role check
+
+#### Data Access Pattern
+All API responses now use consistent pattern:
+```typescript
+// Before (inconsistent)
+const data = response.data.data;
+const data = response.data;
+
+// After (consistent with fallback)
+const responseData = response.data?.data || response.data;
+```
+
+### 📝 Documentation Updates
+- Updated `athleon-api-docs.md` with new response format
+- Updated `SEQUENCE_DIAGRAM.md` with JWT refresh flow
+- Updated `DATA_FLOW_DIAGRAM.md` with new interceptor flow
+- Updated `CLASS_DIAGRAM.md` with ApiResponseTrait
+- Added migration guide in `api.ts` comments
+
+---
+
 ## [Latest Updates] - November 25, 2025
 
 ### 🐛 Bug Fixes

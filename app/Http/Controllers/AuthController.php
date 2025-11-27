@@ -31,20 +31,45 @@ class AuthController extends Controller
         $credentials = $request->only('email', 'password');
 
         if (!$token = auth('api')->attempt($credentials)) {
-            return response()->json([
-                'success' => false,
-                'message' => '401 Invalid Credentials'
-            ], 401);
+            return $this->unauthorizedResponse('Invalid credentials');
         }
 
         $user = auth('api')->setToken($token)->user();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Login berhasil',
+        return $this->successResponse([
             'token' => $token,
             'user' => $user
-        ]);
+        ], 'Login berhasil');
+    }
+
+    // REFRESH TOKEN
+    public function refresh(Request $request)
+    {
+        try {
+            $token = $request->bearerToken() ?? $request->query('token');
+
+            if (!$token) {
+                return $this->badRequestResponse('Token missing');
+            }
+
+            // Set the token and refresh it
+            $newToken = auth('api')->setToken($token)->refresh();
+            $user = auth('api')->setToken($newToken)->user();
+
+            return $this->successResponse([
+                'token' => $newToken,
+                'user' => $user
+            ], 'Token refreshed successfully');
+
+        } catch (TokenExpiredException $e) {
+            return $this->unauthorizedResponse('Token expired, please login again');
+
+        } catch (TokenInvalidException $e) {
+            return $this->unauthorizedResponse('Token invalid');
+
+        } catch (\Exception $e) {
+            return $this->serverErrorResponse('Failed to refresh token: ' . $e->getMessage());
+        }
     }
 
     // REGISTER
@@ -93,27 +118,17 @@ class AuthController extends Controller
             ]);
         }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Register berhasil',
-            'user' => $user
-        ], 201);
+        return $this->createdResponse($user, 'Register berhasil');
     }
 
     // PROFILE
     public function profile()
     {
         if (!auth()->check()) {
-            return response()->json([
-                'success' => false,
-                'message' => '401 Unauthorized'
-            ], 401);
+            return $this->unauthorizedResponse('Unauthorized');
         }
 
-        return response()->json([
-            'success' => true,
-            'user' => auth()->user()
-        ]);
+        return $this->successResponse(auth()->user(), 'Profile retrieved successfully');
     }
 
     // ME
@@ -123,34 +138,25 @@ class AuthController extends Controller
             $token = $request->bearerToken() ?? $request->query('token');
 
             if (!$token) {
-                return response()->json([
-                    'success' => false,
-                    'message' => '400 Token Missing'
-                ], 400);
+                return $this->badRequestResponse('Token missing');
             }
 
             $user = auth('api')->setToken($token)->user();
 
             if (!$user) {
-                return response()->json([
-                    'success' => false,
-                    'message' => '401 Unauthorized'
-                ], 401);
+                return $this->unauthorizedResponse('Unauthorized');
             }
 
-            return response()->json($user);
+            return $this->successResponse($user, 'User data retrieved successfully');
 
         } catch (TokenExpiredException $e) {
-            return response()->json(['message' => '401 Token Expired'], 401);
+            return $this->unauthorizedResponse('Token expired');
 
         } catch (TokenInvalidException $e) {
-            return response()->json(['message' => '401 Unauthorized'], 401);
+            return $this->unauthorizedResponse('Token invalid');
 
         } catch (\Exception $e) {
-            return response()->json([
-                'message' => '500 Server Error',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->serverErrorResponse('Server error: ' . $e->getMessage());
         }
     }
 
@@ -161,30 +167,21 @@ class AuthController extends Controller
             $token = $request->bearerToken() ?? $request->query('token');
 
             if (!$token) {
-                return response()->json([
-                    'success' => false,
-                    'message' => '400 Token Missing'
-                ], 400);
+                return $this->badRequestResponse('Token missing');
             }
 
             auth('api')->setToken($token)->invalidate();
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Logout berhasil'
-            ]);
+            return $this->successResponse(null, 'Logout berhasil');
 
         } catch (TokenExpiredException $e) {
-            return response()->json(['message' => '401 Token Expired'], 401);
+            return $this->unauthorizedResponse('Token expired');
 
         } catch (TokenInvalidException $e) {
-            return response()->json(['message' => '401 Unauthorized'], 401);
+            return $this->unauthorizedResponse('Token invalid');
 
         } catch (\Exception $e) {
-            return response()->json([
-                'message' => '500 Server Error',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->serverErrorResponse('Server error: ' . $e->getMessage());
         }
     }
 
@@ -195,10 +192,7 @@ class AuthController extends Controller
             $user = auth('api')->user();
 
             if (!$user) {
-                return response()->json([
-                    'success' => false,
-                    'message' => '401 Unauthorized'
-                ], 401);
+                return $this->unauthorizedResponse('Unauthorized');
             }
 
             $request->validate([
@@ -228,18 +222,10 @@ class AuthController extends Controller
 
             $user->update($updateData);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Profil berhasil diperbarui',
-                'data' => $user
-            ]);
+            return $this->successResponse($user, 'Profil berhasil diperbarui');
 
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal memperbarui profil',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->serverErrorResponse('Gagal memperbarui profil: ' . $e->getMessage());
         }
     }
     
@@ -252,10 +238,7 @@ class AuthController extends Controller
             $user = auth('api')->user();
 
             if (!$user) {
-                return response()->json([
-                    'success' => false,
-                    'message' => '401 Unauthorized'
-                ], 401);
+                return $this->unauthorizedResponse('Unauthorized');
             }
 
             $request->validate([
@@ -265,10 +248,7 @@ class AuthController extends Controller
 
             // Check if current password is correct
             if (!Hash::check($request->current_password, $user->password)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Password lama tidak sesuai'
-                ], 400);
+                return $this->badRequestResponse('Password lama tidak sesuai');
             }
 
             // Update password
@@ -276,17 +256,10 @@ class AuthController extends Controller
                 'password' => bcrypt($request->new_password)
             ]);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Password berhasil diubah'
-            ]);
+            return $this->successResponse(null, 'Password berhasil diubah');
 
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal mengubah password',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->serverErrorResponse('Gagal mengubah password: ' . $e->getMessage());
         }
     }
 
@@ -302,10 +275,7 @@ class AuthController extends Controller
         // Check if user exists
         $user = User::where('email', $request->email)->first();
         if (!$user) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Email tidak terdaftar',
-            ], 404);
+            return $this->notFoundResponse('Email tidak terdaftar');
         }
 
         // Delete old OTPs for this email
@@ -326,17 +296,12 @@ class AuthController extends Controller
         try {
             Mail::to($request->email)->send(new ResetPasswordOtp($otp, $expiryMinutes));
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Kode OTP telah dikirim ke email Anda',
-                'expires_in' => $expiryMinutes * 60, // in seconds
-            ]);
+            return $this->successResponse([
+                'expires_in' => $expiryMinutes * 60
+            ], 'Kode OTP telah dikirim ke email Anda');
         } catch (\Exception $e) {
             \Log::error('Failed to send OTP email: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal mengirim email. Silakan coba lagi.',
-            ], 500);
+            return $this->serverErrorResponse('Gagal mengirim email. Silakan coba lagi.');
         }
     }
 
@@ -356,23 +321,14 @@ class AuthController extends Controller
             ->first();
 
         if (!$otpRecord) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Kode OTP tidak valid',
-            ], 400);
+            return $this->badRequestResponse('Kode OTP tidak valid');
         }
 
         if (!$otpRecord->isValid()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Kode OTP sudah kadaluarsa',
-            ], 400);
+            return $this->badRequestResponse('Kode OTP sudah kadaluarsa');
         }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Kode OTP valid',
-        ]);
+        return $this->successResponse(null, 'Kode OTP valid');
     }
 
     /**
@@ -393,19 +349,13 @@ class AuthController extends Controller
             ->first();
 
         if (!$otpRecord || !$otpRecord->isValid()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Kode OTP tidak valid atau sudah kadaluarsa',
-            ], 400);
+            return $this->badRequestResponse('Kode OTP tidak valid atau sudah kadaluarsa');
         }
 
         // Find user
         $user = User::where('email', $request->email)->first();
         if (!$user) {
-            return response()->json([
-                'success' => false,
-                'message' => 'User tidak ditemukan',
-            ], 404);
+            return $this->notFoundResponse('User tidak ditemukan');
         }
 
         // Update password
@@ -420,9 +370,6 @@ class AuthController extends Controller
         // Fire password reset event
         event(new PasswordReset($user));
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Password berhasil direset. Silakan login dengan password baru Anda.',
-        ]);
+        return $this->successResponse(null, 'Password berhasil direset. Silakan login dengan password baru Anda.');
     }
 }

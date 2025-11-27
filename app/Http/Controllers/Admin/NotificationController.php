@@ -42,16 +42,7 @@ class NotificationController extends Controller
 
         $notifications = $query->paginate($perPage);
 
-        return response()->json([
-            'success' => true,
-            'data' => $notifications->items(),
-            'pagination' => [
-                'total' => $notifications->total(),
-                'per_page' => $notifications->perPage(),
-                'current_page' => $notifications->currentPage(),
-                'last_page' => $notifications->lastPage(),
-            ],
-        ]);
+        return $this->paginatedResponse($notifications, 'Notifications retrieved successfully');
     }
 
     public function store(Request $request)
@@ -91,28 +82,21 @@ class NotificationController extends Controller
             'read_at' => !empty($validated['mark_as_read']) ? now() : null,
         ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Notifikasi berhasil dibuat',
-            'data' => $notification->load(['user', 'pesanan', 'pembayaran']),
-        ], 201);
+        return $this->createdResponse(
+            $notification->load(['user', 'pesanan', 'pembayaran']),
+            'Notifikasi berhasil dibuat'
+        );
     }
 
     public function markAsRead(Notification $notification)
     {
         if ($notification->read_at) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Notifikasi sudah dibaca',
-            ]);
+            return $this->successResponse(null, 'Notifikasi sudah dibaca');
         }
 
         $notification->markAsRead();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Notifikasi ditandai sebagai dibaca',
-        ]);
+        return $this->successResponse(null, 'Notifikasi ditandai sebagai dibaca');
     }
 
     public function markAllRead(Request $request)
@@ -138,10 +122,7 @@ class NotificationController extends Controller
 
         $query->update(['read_at' => now()]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Notifikasi ditandai sebagai dibaca',
-        ]);
+        return $this->successResponse(null, 'Notifikasi ditandai sebagai dibaca');
     }
 
     private function assertLinkedRecords(int $userId, array $payload, string $targetRole): void

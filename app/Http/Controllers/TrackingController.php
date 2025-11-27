@@ -32,24 +32,16 @@ class TrackingController extends Controller
             if ($response->successful()) {
                 $data = $response->json();
                 
-                return response()->json([
-                    'success' => true,
-                    'data' => $data['data'] ?? $data,
-                    'message' => $data['message'] ?? 'Successfully tracked package'
-                ]);
+                return $this->successResponse(
+                    $data['data'] ?? $data,
+                    $data['message'] ?? 'Successfully tracked package'
+                );
             }
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to track package',
-                'error' => $response->json()
-            ], $response->status());
+            return $this->serverErrorResponse('Failed to track package', $response->json());
 
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error tracking package: ' . $e->getMessage()
-            ], 500);
+            return $this->serverErrorResponse('Error tracking package: ' . $e->getMessage());
         }
     }
 
@@ -81,9 +73,6 @@ class TrackingController extends Controller
             ['code' => 'rpx', 'name' => 'RPX'],
         ];
 
-        return response()->json([
-            'success' => true,
-            'data' => $couriers
-        ]);
+        return $this->successResponse($couriers, 'Couriers retrieved successfully');
     }
 }

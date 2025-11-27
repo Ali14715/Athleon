@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { Link, router } from "@inertiajs/react";
 import axios from "axios";
+import { getErrorMessage, isSuccess, getMessage } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Mail, Lock, User, Phone, CheckCircle2, Moon, Sun } from "lucide-react";
+import { ArrowLeft, Mail, Lock, User, Phone, Moon, Sun } from "lucide-react";
 import SEOHead from "@/components/SEOHead";
 import { toast } from "sonner";
 import { useTheme } from "@/context/ThemeContext";
@@ -51,19 +52,27 @@ const Login = () => {
         password: loginPassword,
       });
 
-      if (res.data.success) {
-        localStorage.setItem("token", res.data.token);
-        if (typeof window !== "undefined") {
-          window.dispatchEvent(new CustomEvent("auth:login"));
+      if (isSuccess(res)) {
+        // Token is in res.data.data.token with new API format
+        const loginData = res.data?.data || res.data;
+        const token = loginData.token;
+        
+        if (token) {
+          localStorage.setItem("token", token);
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new CustomEvent("auth:login"));
+          }
+          toast.success("Login berhasil!");
+          router.visit("/");
+        } else {
+          toast.error("Token tidak ditemukan dalam response");
         }
-        toast.success("Login berhasil!");
-        router.visit("/");
       } else {
-        toast.error(res.data.message || "Login gagal!");
+        toast.error(getMessage(res) || "Login gagal!");
       }
     } catch (error: any) {
-      console.error("Login error:", error);
-      toast.error(error.response?.data?.message || "Terjadi kesalahan saat login");
+      // Error handled by toast - no need to log to console
+      toast.error(getErrorMessage(error));
     } finally {
       setIsLoading(false);
     }
@@ -87,7 +96,7 @@ const Login = () => {
         password_confirmation: registerConfirmPassword,
       });
 
-      if (res.data.success) {
+      if (isSuccess(res)) {
         toast.success("Registrasi berhasil! Silakan login.");
         setActiveTab("login");
         setRegisterName("");
@@ -96,11 +105,11 @@ const Login = () => {
         setRegisterPassword("");
         setRegisterConfirmPassword("");
       } else {
-        toast.error(res.data.message || "Registrasi gagal!");
+        toast.error(getMessage(res) || "Registrasi gagal!");
       }
     } catch (error: any) {
       console.error("Register error:", error);
-      toast.error(error.response?.data?.message || "Terjadi kesalahan saat register");
+      toast.error(getErrorMessage(error));
     } finally {
       setIsLoading(false);
     }

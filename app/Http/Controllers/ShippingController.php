@@ -39,10 +39,7 @@ class ShippingController extends Controller
             ->first();
 
         if (!$keranjang || $keranjang->items->isEmpty()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Keranjang kosong, tidak dapat menghitung ongkir.'
-            ], 400);
+            return $this->badRequestResponse('Keranjang kosong, tidak dapat menghitung ongkir.');
         }
 
         $summary = $this->composeCartSummary($keranjang);
@@ -60,15 +57,9 @@ class ShippingController extends Controller
         try {
             $rates = $this->service->calculateRates($payload);
 
-            return response()->json([
-                'success' => true,
-                'data' => $rates,
-            ]);
+            return $this->successResponse($rates, 'Shipping rates retrieved successfully');
         } catch (\Throwable $th) {
-            return response()->json([
-                'success' => false,
-                'message' => $th->getMessage(),
-            ], 500);
+            return $this->serverErrorResponse($th->getMessage());
         }
     }
 
@@ -82,15 +73,9 @@ class ShippingController extends Controller
         try {
             $tracking = $this->service->trackShipment($data['waybill_id'], $data['courier_code']);
 
-            return response()->json([
-                'success' => true,
-                'data' => $tracking,
-            ]);
+            return $this->successResponse($tracking, 'Tracking data retrieved successfully');
         } catch (\Throwable $th) {
-            return response()->json([
-                'success' => false,
-                'message' => $th->getMessage(),
-            ], 500);
+            return $this->serverErrorResponse($th->getMessage());
         }
     }
 

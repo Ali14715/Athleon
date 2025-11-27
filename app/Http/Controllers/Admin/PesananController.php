@@ -74,8 +74,7 @@ class PesananController extends Controller
                 ];
             })->values();
 
-            return response()->json([
-                'success' => true,
+            return $this->successResponse([
                 'data' => $data,
                 'pagination' => [
                     'total' => $pesanan->total(),
@@ -85,12 +84,9 @@ class PesananController extends Controller
                     'from' => $pesanan->firstItem(),
                     'to' => $pesanan->lastItem(),
                 ],
-            ], 200);
+            ], 'Pesanan retrieved successfully');
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal mengambil data pesanan: ' . $e->getMessage()
-            ], 500);
+            return $this->serverErrorResponse('Gagal mengambil data pesanan: ' . $e->getMessage());
         }
     }
 
@@ -104,10 +100,7 @@ class PesananController extends Controller
                 ->find($id);
 
             if (!$pesanan) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Pesanan tidak ditemukan'
-                ], 404);
+                return $this->notFoundResponse('Pesanan tidak ditemukan');
             }
 
             // Format items with proper pricing
@@ -155,15 +148,9 @@ class PesananController extends Controller
                 'pengiriman' => $pesanan->pengiriman,
             ];
 
-            return response()->json([
-                'success' => true,
-                'data' => $response
-            ], 200);
+            return $this->successResponse($response, 'Detail pesanan retrieved successfully');
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal mengambil detail pesanan: ' . $e->getMessage()
-            ], 500);
+            return $this->serverErrorResponse('Gagal mengambil detail pesanan: ' . $e->getMessage());
         }
     }
 
@@ -182,10 +169,7 @@ class PesananController extends Controller
 
             if (!$pesanan) {
                 DB::rollBack();
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Pesanan tidak ditemukan'
-                ], 404);
+                return $this->notFoundResponse('Pesanan tidak ditemukan');
             }
 
             $oldStatus = $pesanan->status;
@@ -202,10 +186,7 @@ class PesananController extends Controller
                         // Check if stock is sufficient
                         if ($newStock < 0) {
                             DB::rollBack();
-                            return response()->json([
-                                'success' => false,
-                                'message' => "Stok tidak mencukupi untuk produk: {$item->produk->nama}. Stok tersedia: {$currentStock}, diperlukan: {$item->jumlah}"
-                            ], 400);
+                            return $this->badRequestResponse("Stok tidak mencukupi untuk produk: {$item->produk->nama}. Stok tersedia: {$currentStock}, diperlukan: {$item->jumlah}");
                         }
                         
                         // Update product stock
@@ -266,18 +247,11 @@ class PesananController extends Controller
 
             DB::commit();
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Status pesanan berhasil diubah',
-                'data' => $pesanan->fresh()
-            ], 200);
+            return $this->successResponse($pesanan->fresh(), 'Status pesanan berhasil diubah');
         } catch (\Exception $e) {
             DB::rollBack();
             \Log::error('Error updating order status: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal mengubah status: ' . $e->getMessage()
-            ], 500);
+            return $this->serverErrorResponse('Gagal mengubah status: ' . $e->getMessage());
         }
     }
 
@@ -290,17 +264,11 @@ class PesananController extends Controller
             $pesanan = Pesanan::find($id);
 
             if (!$pesanan) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Pesanan tidak ditemukan'
-                ], 404);
+                return $this->notFoundResponse('Pesanan tidak ditemukan');
             }
 
             if ($pesanan->status !== 'Belum Dibayar') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Pesanan harus berstatus "Belum Dibayar"'
-                ], 400);
+                return $this->badRequestResponse('Pesanan harus berstatus "Belum Dibayar"');
             }
 
             $pesanan->update(['status' => 'Dikemas']);
@@ -316,16 +284,9 @@ class PesananController extends Controller
                 'sent_at' => now(),
             ]);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Pesanan dikemas',
-                'data' => $pesanan
-            ], 200);
+            return $this->successResponse($pesanan, 'Pesanan dikemas');
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal mengubah status: ' . $e->getMessage()
-            ], 500);
+            return $this->serverErrorResponse('Gagal mengubah status: ' . $e->getMessage());
         }
     }
 
@@ -338,17 +299,11 @@ class PesananController extends Controller
             $pesanan = Pesanan::find($id);
 
             if (!$pesanan) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Pesanan tidak ditemukan'
-                ], 404);
+                return $this->notFoundResponse('Pesanan tidak ditemukan');
             }
 
             if ($pesanan->status !== 'Dikemas') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Pesanan harus berstatus "Dikemas"'
-                ], 400);
+                return $this->badRequestResponse('Pesanan harus berstatus "Dikemas"');
             }
 
             $pesanan->update(['status' => 'Dikirim']);
@@ -364,16 +319,9 @@ class PesananController extends Controller
                 'sent_at' => now(),
             ]);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Pesanan dikirim',
-                'data' => $pesanan
-            ], 200);
+            return $this->successResponse($pesanan, 'Pesanan dikirim');
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal mengubah status: ' . $e->getMessage()
-            ], 500);
+            return $this->serverErrorResponse('Gagal mengubah status: ' . $e->getMessage());
         }
     }
 
@@ -386,31 +334,18 @@ class PesananController extends Controller
             $pesanan = Pesanan::find($id);
 
             if (!$pesanan) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Pesanan tidak ditemukan'
-                ], 404);
+                return $this->notFoundResponse('Pesanan tidak ditemukan');
             }
 
             if ($pesanan->status !== 'Dikirim') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Pesanan harus berstatus "Dikirim"'
-                ], 400);
+                return $this->badRequestResponse('Pesanan harus berstatus "Dikirim"');
             }
 
             $pesanan->update(['status' => 'Selesai']);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Pesanan selesai',
-                'data' => $pesanan
-            ], 200);
+            return $this->successResponse($pesanan, 'Pesanan selesai');
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal mengubah status: ' . $e->getMessage()
-            ], 500);
+            return $this->serverErrorResponse('Gagal mengubah status: ' . $e->getMessage());
         }
     }
 
@@ -423,24 +358,14 @@ class PesananController extends Controller
             $pesanan = Pesanan::find($id);
 
             if (!$pesanan) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Pesanan tidak ditemukan'
-                ], 404);
+                return $this->notFoundResponse('Pesanan tidak ditemukan');
             }
 
             $pesanan->update(['status' => 'Dibatalkan']);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Pesanan dibatalkan',
-                'data' => $pesanan
-            ], 200);
+            return $this->successResponse($pesanan, 'Pesanan dibatalkan');
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal membatalkan pesanan: ' . $e->getMessage()
-            ], 500);
+            return $this->serverErrorResponse('Gagal membatalkan pesanan: ' . $e->getMessage());
         }
     }
 
@@ -457,24 +382,14 @@ class PesananController extends Controller
             $pesanan = Pesanan::find($id);
 
             if (!$pesanan) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Pesanan tidak ditemukan'
-                ], 404);
+                return $this->notFoundResponse('Pesanan tidak ditemukan');
             }
 
             $pesanan->update(['tracking_number' => $request->tracking_number]);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Nomor resi berhasil diupdate',
-                'data' => $pesanan
-            ], 200);
+            return $this->successResponse($pesanan, 'Nomor resi berhasil diupdate');
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal mengupdate nomor resi: ' . $e->getMessage()
-            ], 500);
+            return $this->serverErrorResponse('Gagal mengupdate nomor resi: ' . $e->getMessage());
         }
     }
 }

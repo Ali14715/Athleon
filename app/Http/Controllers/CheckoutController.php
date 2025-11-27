@@ -55,11 +55,7 @@ class CheckoutController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validasi gagal',
-                'errors' => $validator->errors()
-            ], 422);
+            return $this->validationErrorResponse('Validasi gagal', $validator->errors());
         }
 
         try {
@@ -72,10 +68,7 @@ class CheckoutController extends Controller
                 // Handle buy-now shipping calculation
                 $produk = \App\Models\Produk::find($request->produk_id);
                 if (!$produk) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Produk tidak ditemukan'
-                    ], 404);
+                    return $this->notFoundResponse('Produk tidak ditemukan');
                 }
 
                 $productPrice = $produk->harga ?? 0;
@@ -95,10 +88,7 @@ class CheckoutController extends Controller
                 $keranjang = Keranjang::where('user_id', $user->id)->with('items.produk')->first();
 
                 if (!$keranjang || $keranjang->items->isEmpty()) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Keranjang kosong'
-                    ], 400);
+                    return $this->badRequestResponse('Keranjang kosong');
                 }
 
                 // Calculate total weight and value
@@ -134,16 +124,10 @@ class CheckoutController extends Controller
 
             $rates = $this->biteshipService->calculateRates($payload);
 
-            return response()->json([
-                'success' => true,
-                'data' => $rates
-            ]);
+            return $this->successResponse($rates, 'Shipping rates retrieved successfully');
 
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal mendapatkan tarif pengiriman: ' . $e->getMessage()
-            ], 500);
+            return $this->serverErrorResponse('Gagal mendapatkan tarif pengiriman: ' . $e->getMessage());
         }
     }
     /**
@@ -168,19 +152,12 @@ class CheckoutController extends Controller
                 ]);
                 
                 if ($validator->fails()) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Data tidak valid',
-                        'errors' => $validator->errors()
-                    ], 422);
+                    return $this->validationErrorResponse('Data tidak valid', $validator->errors());
                 }
                 
                 $produk = \App\Models\Produk::find($request->produk_id);
                 if (!$produk) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Produk tidak ditemukan'
-                    ], 404);
+                    return $this->notFoundResponse('Produk tidak ditemukan');
                 }
                 
                 // Create a virtual item for buy-now
@@ -203,10 +180,7 @@ class CheckoutController extends Controller
                 $keranjang = Keranjang::where('user_id', $user->id)->first();
                 
                 if (!$keranjang) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Keranjang kosong'
-                    ], 400);
+                    return $this->badRequestResponse('Keranjang kosong');
                 }
                 
                 // Get cart items with product details (don't eager load varians)
@@ -237,10 +211,7 @@ class CheckoutController extends Controller
                 \Log::info('Checkout getSummary items retrieved:', ['count' => $items->count(), 'item_ids' => $items->pluck('id')->toArray()]);
                 
                 if ($items->isEmpty()) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Keranjang kosong'
-                    ], 400);
+                    return $this->badRequestResponse('Keranjang kosong');
                 }
             }
             
@@ -322,27 +293,21 @@ class CheckoutController extends Controller
                 ],
             ];
             
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'items' => $itemsData,
-                    'subtotal' => $subtotal,
-                    'ongkir' => $ongkir,
-                    'total' => $total,
-                    'shipping' => $shippingMeta,
-                    'user' => [
-                        'name' => $user->name,
-                        'email' => $user->email,
-                        'telepon' => $user->telepon ?? '',
-                    ]
+            return $this->successResponse([
+                'items' => $itemsData,
+                'subtotal' => $subtotal,
+                'ongkir' => $ongkir,
+                'total' => $total,
+                'shipping' => $shippingMeta,
+                'user' => [
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'telepon' => $user->telepon ?? '',
                 ]
-            ]);
+            ], 'Checkout summary retrieved successfully');
             
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal mengambil data checkout: ' . $e->getMessage()
-            ], 500);
+            return $this->serverErrorResponse('Gagal mengambil data checkout: ' . $e->getMessage());
         }
     }
     
@@ -370,11 +335,7 @@ class CheckoutController extends Controller
         ]);
         
         if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validasi gagal',
-                'errors' => $validator->errors()
-            ], 422);
+            return $this->validationErrorResponse('Validasi gagal', $validator->errors());
         }
         
         DB::beginTransaction();
@@ -388,10 +349,7 @@ class CheckoutController extends Controller
                 // Handle buy-now checkout
                 $produk = \App\Models\Produk::find($request->produk_id);
                 if (!$produk) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Produk tidak ditemukan'
-                    ], 404);
+                    return $this->notFoundResponse('Produk tidak ditemukan');
                 }
                 
                 // Create a virtual cart item for buy-now
@@ -413,10 +371,7 @@ class CheckoutController extends Controller
                 $keranjang = Keranjang::where('user_id', $user->id)->first();
                 
                 if (!$keranjang) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Keranjang kosong'
-                    ], 400);
+                    return $this->badRequestResponse('Keranjang kosong');
                 }
                 
                 // Get cart items with filtering (don't eager load varians)
@@ -447,10 +402,7 @@ class CheckoutController extends Controller
                 \Log::info('Checkout process items retrieved:', ['count' => $cartItems->count(), 'item_ids' => $cartItems->pluck('id')->toArray()]);
                 
                 if ($cartItems->isEmpty()) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Tidak ada item yang dipilih'
-                    ], 400);
+                    return $this->badRequestResponse('Tidak ada item yang dipilih');
                 }
             }
             
@@ -625,10 +577,7 @@ class CheckoutController extends Controller
                         'line' => $e->getLine(),
                         'trace' => $e->getTraceAsString(),
                     ]);
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Gagal membuat pembayaran Midtrans: ' . $e->getMessage()
-                    ], 500);
+                    return $this->serverErrorResponse('Gagal membuat pembayaran Midtrans: ' . $e->getMessage());
                 }
             } else {
                 // Create payment record for non-Midtrans methods (COD, etc)
@@ -688,19 +637,12 @@ class CheckoutController extends Controller
             
             DB::commit();
             
-            return response()->json([
-                'success' => true,
-                'message' => 'Pesanan berhasil dibuat',
-                'data' => $paymentData
-            ]);
+            return $this->createdResponse($paymentData, 'Pesanan berhasil dibuat');
             
         } catch (\Exception $e) {
             DB::rollBack();
             
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal membuat pesanan: ' . $e->getMessage()
-            ], 500);
+            return $this->serverErrorResponse('Gagal membuat pesanan: ' . $e->getMessage());
         }
     }
     
@@ -725,7 +667,7 @@ class CheckoutController extends Controller
             
             // Verify signature
             if ($hashed !== $request->signature_key) {
-                return response()->json(['message' => 'Invalid signature'], 403);
+                return $this->forbiddenResponse('Invalid signature');
             }
             
             $transactionStatus = $request->transaction_status;
@@ -736,7 +678,7 @@ class CheckoutController extends Controller
             $pembayaran = Pembayaran::where('transaction_id', $transactionId)->first();
             
             if (!$pembayaran) {
-                return response()->json(['message' => 'Payment not found'], 404);
+                return $this->notFoundResponse('Payment not found');
             }
             
             $pesanan = $pembayaran->pesanan;
@@ -766,11 +708,11 @@ class CheckoutController extends Controller
                 $pesanan->save();
             }
             
-            return response()->json(['message' => 'Notification processed']);
+            return $this->successResponse(null, 'Notification processed');
             
         } catch (\Exception $e) {
             \Log::error('Midtrans notification error: ' . $e->getMessage());
-            return response()->json(['message' => 'Error processing notification'], 500);
+            return $this->serverErrorResponse('Error processing notification');
         }
     }
 }

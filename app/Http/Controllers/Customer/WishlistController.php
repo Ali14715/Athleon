@@ -16,7 +16,7 @@ class WishlistController extends Controller
         try {
             $user = Auth::user();
             if (!$user) {
-                return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+                return $this->unauthorizedResponse('Unauthorized');
             }
 
             $items = Wishlist::with('produk')
@@ -24,16 +24,9 @@ class WishlistController extends Controller
                 ->latest()
                 ->get();
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Wishlist berhasil diambil',
-                'data' => $items,
-            ]);
+            return $this->successResponse($items, 'Wishlist berhasil diambil');
         } catch (Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan server: ' . $e->getMessage(),
-            ], 500);
+            return $this->serverErrorResponse('Terjadi kesalahan server: ' . $e->getMessage());
         }
     }
 
@@ -42,7 +35,7 @@ class WishlistController extends Controller
         try {
             $user = Auth::user();
             if (!$user) {
-                return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+                return $this->unauthorizedResponse('Unauthorized');
             }
 
             $validated = $request->validate([
@@ -51,7 +44,7 @@ class WishlistController extends Controller
 
             $produk = Produk::find($validated['produk_id']);
             if (!$produk) {
-                return response()->json(['success' => false, 'message' => 'Produk tidak ditemukan'], 404);
+                return $this->notFoundResponse('Produk tidak ditemukan');
             }
 
             $wishlist = Wishlist::firstOrCreate([
@@ -63,22 +56,14 @@ class WishlistController extends Controller
                 ? 'Produk ditambahkan ke wishlist'
                 : 'Produk sudah ada di wishlist';
 
-            return response()->json([
-                'success' => true,
-                'message' => $message,
-                'data' => $wishlist->load('produk'),
-            ], $wishlist->wasRecentlyCreated ? 201 : 200);
+            if ($wishlist->wasRecentlyCreated) {
+                return $this->createdResponse($wishlist->load('produk'), $message);
+            }
+            return $this->successResponse($wishlist->load('produk'), $message);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validasi gagal',
-                'errors' => $e->errors(),
-            ], 422);
+            return $this->validationErrorResponse($e->errors(), 'Validasi gagal');
         } catch (Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan server: ' . $e->getMessage(),
-            ], 500);
+            return $this->serverErrorResponse('Terjadi kesalahan server: ' . $e->getMessage());
         }
     }
 
@@ -87,7 +72,7 @@ class WishlistController extends Controller
         try {
             $user = Auth::user();
             if (!$user) {
-                return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+                return $this->unauthorizedResponse('Unauthorized');
             }
 
             $wishlist = Wishlist::where('user_id', $user->id)
@@ -95,23 +80,14 @@ class WishlistController extends Controller
                 ->first();
 
             if (!$wishlist) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Produk tidak ditemukan di wishlist',
-                ], 404);
+                return $this->notFoundResponse('Produk tidak ditemukan di wishlist');
             }
 
             $wishlist->delete();
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Produk dihapus dari wishlist',
-            ]);
+            return $this->successResponse(null, 'Produk dihapus dari wishlist');
         } catch (Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan server: ' . $e->getMessage(),
-            ], 500);
+            return $this->serverErrorResponse('Terjadi kesalahan server: ' . $e->getMessage());
         }
     }
 }

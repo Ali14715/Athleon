@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CreditCard, Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { toast } from "sonner";
-import api from "@/lib/api";
+import api, { isSuccess, getData, getErrorMessage } from "@/lib/api";
 
 // Declare Midtrans Snap global
 declare global {
@@ -86,8 +86,9 @@ const Payment = () => {
         order_id: orderId,
       });
 
-      if (response.data.success && response.data.snap_token && window.snap) {
-        window.snap.pay(response.data.snap_token, {
+      const data = getData(response) as { snap_token?: string };
+      if (isSuccess(response) && data.snap_token && window.snap) {
+        window.snap.pay(data.snap_token, {
           onSuccess: async function () {
             toast.success("Pembayaran berhasil!");
             setPaymentStatus("success");
@@ -124,7 +125,7 @@ const Payment = () => {
       }
     } catch (error: any) {
       console.error("Payment error:", error);
-      toast.error(error.response?.data?.message || "Gagal membuat pembayaran");
+      toast.error(getErrorMessage(error));
       setPaymentStatus("error");
     } finally {
       setProcessing(false);

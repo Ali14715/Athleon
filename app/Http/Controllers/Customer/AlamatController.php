@@ -57,10 +57,7 @@ class AlamatController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return response()->json([
-            'success' => true,
-            'data' => $alamat
-        ]);
+        return $this->successResponse($alamat);
     }
 
     // Get single address
@@ -71,16 +68,10 @@ class AlamatController extends Controller
             ->first();
 
         if (!$alamat) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Alamat tidak ditemukan'
-            ], 404);
+            return $this->notFoundResponse('Alamat tidak ditemukan');
         }
 
-        return response()->json([
-            'success' => true,
-            'data' => $alamat
-        ]);
+        return $this->successResponse($alamat);
     }
 
     // Create new address
@@ -103,11 +94,7 @@ class AlamatController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validasi gagal',
-                'errors' => $validator->errors()
-            ], 422);
+            return $this->validationErrorResponse($validator->errors(), 'Validasi gagal');
         }
 
         // Check if user has no default address - if so, make this the default
@@ -160,11 +147,7 @@ class AlamatController extends Controller
             'is_default' => $isDefaultValue,
         ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Alamat berhasil ditambahkan',
-            'data' => $alamat
-        ], 201);
+        return $this->createdResponse($alamat, 'Alamat berhasil ditambahkan');
     }
 
     // Update address
@@ -175,10 +158,7 @@ class AlamatController extends Controller
             ->first();
 
         if (!$alamat) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Alamat tidak ditemukan'
-            ], 404);
+            return $this->notFoundResponse('Alamat tidak ditemukan');
         }
 
         $validator = Validator::make($request->all(), [
@@ -198,11 +178,7 @@ class AlamatController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validasi gagal',
-                'errors' => $validator->errors()
-            ], 422);
+            return $this->validationErrorResponse($validator->errors(), 'Validasi gagal');
         }
 
         // If this is set as default, unset other defaults
@@ -292,11 +268,7 @@ class AlamatController extends Controller
             'was_updated' => $alamat->wasChanged('area_id')
         ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Alamat berhasil diperbarui',
-            'data' => $alamat
-        ]);
+        return $this->successResponse($alamat, 'Alamat berhasil diperbarui');
     }
 
     // Delete address
@@ -307,10 +279,7 @@ class AlamatController extends Controller
             ->first();
 
         if (!$alamat) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Alamat tidak ditemukan'
-            ], 404);
+            return $this->notFoundResponse('Alamat tidak ditemukan');
         }
 
         $wasDefault = $alamat->is_default;
@@ -327,10 +296,7 @@ class AlamatController extends Controller
             }
         }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Alamat berhasil dihapus'
-        ]);
+        return $this->successResponse(null, 'Alamat berhasil dihapus');
     }
 
     // Set address as default
@@ -341,10 +307,7 @@ class AlamatController extends Controller
             ->first();
 
         if (!$alamat) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Alamat tidak ditemukan'
-            ], 404);
+            return $this->notFoundResponse('Alamat tidak ditemukan');
         }
 
         // Unset all defaults
@@ -354,11 +317,7 @@ class AlamatController extends Controller
         // Set this as default
         $alamat->update(['is_default' => true]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Alamat default berhasil diubah',
-            'data' => $alamat
-        ]);
+        return $this->successResponse($alamat, 'Alamat default berhasil diubah');
     }
 
     /**
@@ -493,10 +452,7 @@ class AlamatController extends Controller
             ->first();
 
         if (!$alamat) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Alamat tidak ditemukan'
-            ], 404);
+            return $this->notFoundResponse('Alamat tidak ditemukan');
         }
 
         Log::info('=== FORCE UPDATE AREA_ID ===', [
@@ -516,17 +472,9 @@ class AlamatController extends Controller
             $alamat->update(['area_id' => $areaId]);
             $alamat->refresh();
             
-            return response()->json([
-                'success' => true,
-                'message' => 'Area ID berhasil diperbarui',
-                'data' => $alamat
-            ]);
+            return $this->successResponse($alamat, 'Area ID berhasil diperbarui');
         }
 
-        return response()->json([
-            'success' => false,
-            'message' => 'Gagal mendapatkan area_id dari Biteship',
-            'data' => $alamat
-        ]);
+        return $this->badRequestResponse('Gagal mendapatkan area_id dari Biteship');
     }
 }

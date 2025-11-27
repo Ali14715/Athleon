@@ -3,6 +3,7 @@ import { ShoppingCart, Loader2, Star } from "lucide-react";
 import { Link, router } from "@inertiajs/react";
 import { toast } from "sonner";
 import axios from "axios";
+import { getErrorMessage, isSuccess } from "@/lib/api";
 import VariantPickerDialog from "@/components/VariantPickerDialog";
 
 interface ProductCardProps {
@@ -77,7 +78,7 @@ const ProductCard = ({ id, name, price, image, category, hasVariants: hasVariant
         }
       );
 
-      if (response.data.success) {
+      if (isSuccess(response)) {
         toast.success("Produk ditambahkan ke keranjang");
         // Trigger refresh cart count
         window.dispatchEvent(new Event('cartUpdated'));
@@ -89,10 +90,8 @@ const ProductCard = ({ id, name, price, image, category, hasVariants: hasVariant
         localStorage.removeItem("token");
         toast.error("Sesi Anda telah berakhir. Silakan login kembali.");
         router.visit("/login");
-      } else if (error.response && error.response.data && error.response.data.message) {
-        toast.error(error.response.data.message);
       } else {
-        toast.error("Gagal menambahkan ke keranjang");
+        toast.error(getErrorMessage(error));
       }
     } finally {
       setLoading(false);
@@ -142,10 +141,8 @@ const ProductCard = ({ id, name, price, image, category, hasVariants: hasVariant
         localStorage.removeItem("token");
         toast.error("Sesi Anda telah berakhir. Silakan login kembali.");
         router.visit("/login");
-      } else if (error.response && error.response.data && error.response.data.message) {
-        toast.error(error.response.data.message);
       } else {
-        toast.error("Gagal menambahkan produk");
+        toast.error(getErrorMessage(error));
       }
     } finally {
       setBuyLoading(false);

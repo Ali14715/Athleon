@@ -22,7 +22,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Plus, Pencil, Trash2, Image as ImageIcon, Loader2 } from "lucide-react";
-import api from "@/lib/api";
+import api, { getErrorMessage } from "@/lib/api";
 
 interface Banner {
   id: number;
@@ -61,9 +61,11 @@ export default function Banners() {
   const fetchBanners = async () => {
     try {
       const response = await api.get("/api/admin/banners");
-      setBanners(response.data);
+      // Handle new API format: { status_code, message, data }
+      const bannersData = response.data?.data || response.data || [];
+      setBanners(Array.isArray(bannersData) ? bannersData : []);
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Gagal memuat banners");
+      toast.error(getErrorMessage(error));
     } finally {
       setLoading(false);
     }
@@ -133,7 +135,7 @@ export default function Banners() {
       setDialogOpen(false);
       fetchBanners();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Gagal menyimpan banner");
+      toast.error(getErrorMessage(error));
     } finally {
       setSubmitting(false);
     }
@@ -147,7 +149,7 @@ export default function Banners() {
       toast.success("Banner berhasil dihapus");
       fetchBanners();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Gagal menghapus banner");
+      toast.error(getErrorMessage(error));
     }
   };
 

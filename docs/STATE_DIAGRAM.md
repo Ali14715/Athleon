@@ -4,10 +4,58 @@ This document describes the state transitions for key entities in the Athleon e-
 
 ## Recent Updates (Nov 2025)
 
+### API Response Standardization (v2.0)
+All API responses now follow consistent format:
+```json
+{
+  "status_code": 200,
+  "message": "Success message",
+  "data": { ... }
+}
+```
+
+### JWT Token State
+- Tokens have TTL (default 60 minutes)
+- Auto-refresh mechanism in frontend
+- Refresh tokens valid for 2 weeks
+
 ### State Transition Changes
 1. **Stock Management**: Product stock automatically reduced when order transitions to "Dikemas" status
 2. **Payment Webhook**: Status updates triggered by Midtrans webhook with signature verification
 3. **Frontend Display**: Order IDs shown in ATH{4digit}{3digit} format (e.g., ATH0007123)
+
+---
+
+## 0. JWT Token State Diagram (NEW)
+
+```mermaid
+stateDiagram-v2
+    [*] --> NoToken: Initial State
+    
+    NoToken --> Valid: Login Success
+    
+    Valid --> Expired: TTL Exceeded<br/>(60 min default)
+    Valid --> Invalid: Token Tampered<br/>or Blacklisted
+    Valid --> NoToken: User Logout
+    
+    Expired --> Valid: Refresh Token<br/>POST /auth/refresh
+    Expired --> NoToken: Refresh Failed<br/>(Redirect to Login)
+    
+    Invalid --> NoToken: Clear & Redirect<br/>to Login
+    
+    note right of Valid
+        Bearer token in
+        localStorage
+        Attached to all
+        API requests
+    end note
+    
+    note right of Expired
+        Auto-refresh
+        triggered by
+        Axios interceptor
+    end note
+```
 
 ---
 

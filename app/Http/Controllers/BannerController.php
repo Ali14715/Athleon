@@ -10,6 +10,6 @@ class BannerController extends Controller
     public function index()
     {
         $banners = Banner::active()->get();
-        return response()->json($banners);
+        return $this->successResponse($banners, 'Banner retrieved successfully');
     }
 }

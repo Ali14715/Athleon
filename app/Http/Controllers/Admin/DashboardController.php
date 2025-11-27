@@ -99,7 +99,7 @@ class DashboardController extends Controller
                 ];
             });
 
-        return response()->json([
+        return $this->successResponse([
             'stats' => [
                 'totalProducts' => $totalProducts,
                 'totalOrders' => $totalOrders,
@@ -114,6 +114,6 @@ class DashboardController extends Controller
             'recentOrders' => $recentOrders,
             'salesData' => $salesData,
             'topProducts' => $topProducts,
-        ]);
+        ], 'Dashboard data retrieved successfully');
     }
 }

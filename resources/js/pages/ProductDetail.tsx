@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
+import { getErrorMessage, isSuccess } from "@/lib/api";
 
 interface CategoryData {
   id?: number;
@@ -178,7 +179,7 @@ const ProductDetail = ({ id }: { id: string }) => {
         }
       );
 
-      if (response.data.success) {
+      if (isSuccess(response)) {
         toast.success("Produk berhasil ditambahkan ke keranjang!");
         
         // Trigger event untuk update badge di navbar
@@ -191,10 +192,8 @@ const ProductDetail = ({ id }: { id: string }) => {
         localStorage.removeItem("token");
         toast.error("Sesi Anda telah berakhir. Silakan login kembali.");
         router.visit("/login");
-      } else if (error.response && error.response.data && error.response.data.message) {
-        toast.error(error.response.data.message);
       } else {
-        toast.error("Gagal menambahkan produk ke keranjang");
+        toast.error(getErrorMessage(error));
       }
     } finally {
       setAddingToCart(false);
@@ -290,10 +289,8 @@ const ProductDetail = ({ id }: { id: string }) => {
         localStorage.removeItem("token");
         toast.error("Sesi Anda telah berakhir. Silakan login kembali.");
         router.visit("/login");
-      } else if (error.response?.data?.message) {
-        toast.error(error.response.data.message);
       } else {
-        toast.error("Tidak dapat memperbarui wishlist");
+        toast.error(getErrorMessage(error));
       }
     } finally {
       setWishlistLoading(false);

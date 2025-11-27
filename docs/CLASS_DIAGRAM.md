@@ -2,7 +2,103 @@
 
 ## Overview
 
-This document outlines the Laravel Eloquent models and their relationships in the Athleon e-commerce system.
+This document outlines the Laravel Eloquent models, traits, and their relationships in the Athleon e-commerce system.
+
+## Recent Updates (Nov 2025)
+
+### New Components
+1. **ApiResponseTrait**: Centralized response handling for all controllers
+2. **Frontend API Helpers**: TypeScript interfaces and helper functions for API responses
+
+---
+
+## API Response Architecture
+
+```mermaid
+classDiagram
+    class ApiResponseTrait {
+        <<trait>>
+        +successResponse(data, message, statusCode) JsonResponse
+        +createdResponse(data, message) JsonResponse
+        +errorResponse(message, statusCode) JsonResponse
+        +unauthorizedResponse(message) JsonResponse
+        +forbiddenResponse(message) JsonResponse
+        +notFoundResponse(message) JsonResponse
+        +validationErrorResponse(errors, message) JsonResponse
+        +badRequestResponse(message) JsonResponse
+        +serverErrorResponse(message) JsonResponse
+    }
+    
+    class Controller {
+        <<abstract>>
+    }
+    
+    class AuthController {
+        +login(Request) JsonResponse
+        +register(Request) JsonResponse
+        +refresh(Request) JsonResponse
+        +logout(Request) JsonResponse
+        +me(Request) JsonResponse
+    }
+    
+    class AdminController {
+        <<abstract>>
+    }
+    
+    class CustomerController {
+        <<abstract>>
+    }
+    
+    Controller <|-- AuthController
+    Controller <|-- AdminController
+    Controller <|-- CustomerController
+    ApiResponseTrait <.. Controller : uses
+```
+
+### Frontend API Types
+
+```mermaid
+classDiagram
+    class ApiResponse~T~ {
+        <<interface>>
+        +number status_code
+        +string message
+        +T data
+        +boolean success
+    }
+    
+    class PaginatedData~T~ {
+        <<interface>>
+        +T[] data
+        +PaginationMeta pagination
+    }
+    
+    class PaginationMeta {
+        <<interface>>
+        +number total
+        +number per_page
+        +number current_page
+        +number last_page
+    }
+    
+    class ApiHelpers {
+        <<module>>
+        +isSuccess(response) boolean
+        +isError(response) boolean
+        +getData(response) T
+        +getMessage(response) string
+        +getStatusCode(response) number
+        +getErrorMessage(error) string
+        +getValidationErrors(error) Record
+    }
+    
+    ApiResponse~T~ --> PaginatedData~T~ : data can be
+    PaginatedData~T~ --> PaginationMeta : contains
+```
+
+---
+
+## Core Models
 
 ```mermaid
 classDiagram

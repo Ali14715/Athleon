@@ -33,7 +33,7 @@ interface InfiniteProductGridProps {
   initialLimit?: number;
 }
 
-const InfiniteProductGrid = ({ initialLimit = 12 }: InfiniteProductGridProps) => {
+const InfiniteProductGrid = ({ initialLimit: _initialLimit = 12 }: InfiniteProductGridProps) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);

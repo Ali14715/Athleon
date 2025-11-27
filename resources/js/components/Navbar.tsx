@@ -9,7 +9,7 @@ import { useTheme } from "@/context/ThemeContext";
 import { useState, useEffect } from "react";
 import { formatDistanceToNow } from "date-fns";
 import SearchDialog from "./SearchDialog";
-import api from "@/lib/api";
+import api, { isSuccess, getData } from "@/lib/api";
 
 const Navbar = () => {
   const { url } = usePage();
@@ -72,9 +72,11 @@ const Navbar = () => {
   const fetchUserRole = async () => {
     try {
       const response = await api.post("/api/auth/me");
+      // Handle new API format: { status_code, message, data }
+      const userData = response.data?.data || response.data;
       
-      if (response.data && response.data.role) {
-        setUserRole(response.data.role);
+      if (userData && userData.role) {
+        setUserRole(userData.role);
       }
     } catch (error) {
       // Silently fail if not logged in or error
@@ -92,9 +94,10 @@ const Navbar = () => {
     try {
       const response = await api.get("/api/customer/keranjang");
       
-      if (response.data.success && response.data.data) {
-        const items = response.data.data.items || [];
-        const totalItems = items.reduce((sum: number, item: any) => sum + item.jumlah, 0);
+      if (isSuccess(response) && getData(response)) {
+        const cartData = getData(response) as { items?: Array<{ jumlah: number }> };
+        const items = cartData.items || [];
+        const totalItems = items.reduce((sum: number, item) => sum + item.jumlah, 0);
         setCartCount(totalItems);
       }
     } catch (error) {

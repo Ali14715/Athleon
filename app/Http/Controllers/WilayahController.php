@@ -27,12 +27,9 @@ class WilayahController extends Controller
                 return ['data' => []];
             });
             
-            return response()->json($provinces);
+            return $this->successResponse($provinces, 'Provinces retrieved successfully');
         } catch (\Exception $e) {
-            return response()->json([
-                'error' => 'Gagal mengambil data provinsi',
-                'message' => $e->getMessage()
-            ], 500);
+            return $this->serverErrorResponse('Gagal mengambil data provinsi: ' . $e->getMessage());
         }
     }
     
@@ -53,12 +50,9 @@ class WilayahController extends Controller
                 return ['data' => []];
             });
             
-            return response()->json($cities);
+            return $this->successResponse($cities, 'Cities retrieved successfully');
         } catch (\Exception $e) {
-            return response()->json([
-                'error' => 'Gagal mengambil data kota/kabupaten',
-                'message' => $e->getMessage()
-            ], 500);
+            return $this->serverErrorResponse('Gagal mengambil data kota/kabupaten: ' . $e->getMessage());
         }
     }
     
@@ -79,12 +73,9 @@ class WilayahController extends Controller
                 return ['data' => []];
             });
             
-            return response()->json($districts);
+            return $this->successResponse($districts, 'Districts retrieved successfully');
         } catch (\Exception $e) {
-            return response()->json([
-                'error' => 'Gagal mengambil data kecamatan',
-                'message' => $e->getMessage()
-            ], 500);
+            return $this->serverErrorResponse('Gagal mengambil data kecamatan: ' . $e->getMessage());
         }
     }
     
@@ -105,12 +96,9 @@ class WilayahController extends Controller
                 return ['data' => []];
             });
             
-            return response()->json($villages);
+            return $this->successResponse($villages, 'Villages retrieved successfully');
         } catch (\Exception $e) {
-            return response()->json([
-                'error' => 'Gagal mengambil data kelurahan/desa',
-                'message' => $e->getMessage()
-            ], 500);
+            return $this->serverErrorResponse('Gagal mengambil data kelurahan/desa: ' . $e->getMessage());
         }
     }
 }

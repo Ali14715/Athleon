@@ -2,8 +2,8 @@
   "openapi": "3.0.0",
   "info": {
     "title": "Athleon API",
-    "version": "1.0.0",
-    "description": "Comprehensive API Documentation for Athleon E-Commerce. \n\n**Authentication**: Bearer Token (JWT).\n**Base URL**: `/api`\n\n**Postman Variables**:\n- `{{BASE_URL}}`: http://localhost:8000/api\n- `{{bearerAuth}}`: Your JWT token from login response"
+    "version": "2.0.0",
+    "description": "Comprehensive API Documentation for Athleon E-Commerce. \n\n**Authentication**: Bearer Token (JWT).\n**Base URL**: `/api`\n\n**Standard Response Format (v2.0)**:\n```json\n{\n  \"status_code\": 200,\n  \"message\": \"Success message\",\n  \"data\": { ... }\n}\n```\n\n**Postman Variables**:\n- `{{BASE_URL}}`: http://localhost:8000/api\n- `{{bearerAuth}}`: Your JWT token from login response"
   },
   "servers": [
     {
@@ -38,6 +38,42 @@
       }
     },
     "schemas": {
+      "StandardResponse": {
+        "type": "object",
+        "properties": {
+          "status_code": { "type": "integer", "example": 200 },
+          "message": { "type": "string", "example": "Operation successful" },
+          "data": { "type": "object", "description": "Response data payload" }
+        },
+        "required": ["status_code", "message"]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "status_code": { "type": "integer", "example": 400 },
+          "message": { "type": "string", "example": "Error message" },
+          "data": { "type": "object", "nullable": true }
+        }
+      },
+      "ValidationErrorResponse": {
+        "type": "object",
+        "properties": {
+          "status_code": { "type": "integer", "example": 422 },
+          "message": { "type": "string", "example": "Validation error" },
+          "data": {
+            "type": "object",
+            "properties": {
+              "errors": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                }
+              }
+            }
+          }
+        }
+      },
       "User": {
         "type": "object",
         "properties": {

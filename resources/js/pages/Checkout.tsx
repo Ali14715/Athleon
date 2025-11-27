@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Loader2, Package, MapPin, CreditCard, Truck, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
-import api from "@/lib/api";
+import api, { isSuccess, getData, getErrorMessage } from "@/lib/api";
 
 // Declare Midtrans Snap on window
 declare global {
@@ -179,13 +179,13 @@ const Checkout = () => {
         return;
       }
       
-      if (response && response.data.success) {
-        const data = response.data.data;
+      if (response && isSuccess(response)) {
+        const data = getData(response) as CheckoutSummary;
         setSummary(data);
       }
     } catch (error: any) {
       console.error("Error:", error);
-      toast.error(error.response?.data?.message || "Gagal memuat data checkout");
+      toast.error(getErrorMessage(error));
       router.visit("/cart");
     } finally {
       setLoading(false);
@@ -232,8 +232,9 @@ const Checkout = () => {
 
       const response = await api.post("/api/customer/checkout/shipping-rates", payload);
 
-      if (response.data.success) {
-        const pricing = response.data.data?.pricing || [];
+      if (isSuccess(response)) {
+        const responseData = getData(response) as { pricing?: any[] };
+        const pricing = responseData?.pricing || [];
         setShippingRates(pricing);
         
         if (pricing.length === 0) {
@@ -242,7 +243,7 @@ const Checkout = () => {
       }
     } catch (error: any) {
       console.error("Error fetching shipping rates:", error);
-      toast.error(error.response?.data?.message || "Gagal memuat tarif pengiriman");
+      toast.error(getErrorMessage(error));
     } finally {
       setLoadingRates(false);
     }
@@ -303,8 +304,8 @@ const Checkout = () => {
 
       const response = await api.post("/api/customer/checkout/process", requestData);
 
-      if (response.data.success) {
-        const orderData = response.data.data;
+      if (isSuccess(response)) {
+        const orderData = getData(response) as { order_id: string; total: number; snap_token?: string };
         
         // Show immediate success toast with order info
         toast.success(`Pesanan #${orderData.order_id} berhasil dibuat! Total: Rp ${orderData.total.toLocaleString('id-ID')}`);
@@ -332,7 +333,7 @@ const Checkout = () => {
       }
     } catch (error: any) {
       console.error("Checkout error:", error);
-      toast.error(error.response?.data?.message || "Gagal membuat pesanan");
+      toast.error(getErrorMessage(error));
     } finally {
       setProcessing(false);
     }

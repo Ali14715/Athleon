@@ -10,6 +10,72 @@
 - **Pagination**: Standard `page`, `per_page` query params when supported by controllers.
 - **Postman variables**: set `{{base_url}}`, `{{admin_token}}`, `{{customer_token}}`, `{{midtrans_server_key}}`.
 
+## Standardized Response Format (v2.0)
+
+All API endpoints return responses in a consistent format:
+
+### Success Response
+```json
+{
+  "status_code": 200,
+  "message": "Operation berhasil",
+  "data": {
+    // Response data here
+  }
+}
+```
+
+### Error Response
+```json
+{
+  "status_code": 400,
+  "message": "Error message",
+  "data": null
+}
+```
+
+### Validation Error Response
+```json
+{
+  "status_code": 422,
+  "message": "Validation error",
+  "data": {
+    "errors": {
+      "field_name": ["Error message 1", "Error message 2"]
+    }
+  }
+}
+```
+
+### Paginated Response
+```json
+{
+  "status_code": 200,
+  "message": "Data retrieved successfully",
+  "data": {
+    "data": [...],
+    "pagination": {
+      "total": 100,
+      "per_page": 20,
+      "current_page": 1,
+      "last_page": 5
+    }
+  }
+}
+```
+
+### Status Codes
+| Code | Meaning | Method |
+| --- | --- | --- |
+| 200 | Success | `successResponse()` |
+| 201 | Created | `createdResponse()` |
+| 400 | Bad Request | `badRequestResponse()` |
+| 401 | Unauthorized | `unauthorizedResponse()` |
+| 403 | Forbidden | `forbiddenResponse()` |
+| 404 | Not Found | `notFoundResponse()` |
+| 422 | Validation Error | `validationErrorResponse()` |
+| 500 | Server Error | `serverErrorResponse()` |
+
 ## Postman Collection Blueprint
 | Folder | Purpose | Key Endpoints |
 | --- | --- | --- |
@@ -29,7 +95,7 @@
 | POST | `/auth/register` | Customer sign-up | None | `{ "name": "Jane", "email": "jane@ex.com", "password": "Secret123", "telepon": "0812" }`
 | POST | `/auth/login` | Obtain JWT | None | `{ "email": "admin@athleon.com", "password": "Secret123" }`
 | POST | `/auth/logout` | Invalidate current token | Bearer | — |
-| POST | `/auth/refresh` | Rotate token | Bearer | — |
+| POST | `/auth/refresh` | Rotate/refresh JWT token | Bearer | — |
 | POST | `/auth/me` | Profile (POST alias) | Bearer | — |
 | GET | `/auth/user` | Profile (GET alias) | Bearer | — |
 | POST | `/auth/send-otp` | Send password reset OTP | None | `{ "email": "jane@ex.com" }`
@@ -37,6 +103,40 @@
 | POST | `/auth/reset-password-otp` | Set new password w/ valid OTP | None | `{ "email": "jane@ex.com", "otp": "123456", "password": "Baru123" }`
 | POST | `/auth/change-password` | Customer password change | Bearer + `role:customer` | `{ "current_password": "Secret123", "password": "Baru123" }`
 | PUT | `/customer/profile` | Update name/phone/gender/avatar | Bearer + `role:customer` | `{ "name": "Jane Updated", "telepon": "08123" }`
+
+#### Login Response Example
+```json
+{
+  "status_code": 200,
+  "message": "Login berhasil",
+  "data": {
+    "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+    "user": {
+      "id": 1,
+      "name": "John Doe",
+      "email": "john@example.com",
+      "role": "customer"
+    }
+  }
+}
+```
+
+#### Refresh Token Response
+```json
+{
+  "status_code": 200,
+  "message": "Token refreshed successfully",
+  "data": {
+    "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+    "user": {
+      "id": 1,
+      "name": "John Doe",
+      "email": "john@example.com",
+      "role": "customer"
+    }
+  }
+}
+```
 
 ### 2. Public Catalog & Meta
 | Method | Path | Description |
@@ -159,6 +259,58 @@
 | GET | `/payment/finish` | Midtrans redirect landing page (success/cancel)
 
 ### Sample Postman Request/Response Blocks
+
+**Login Request/Response**
+```http
+POST {{base_url}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "customer@example.com",
+  "password": "password123"
+}
+```
+
+**Response:**
+```json
+{
+  "status_code": 200,
+  "message": "Login berhasil",
+  "data": {
+    "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+    "user": {
+      "id": 7,
+      "name": "Customer",
+      "email": "customer@example.com",
+      "role": "customer"
+    }
+  }
+}
+```
+
+**Refresh Token Request/Response**
+```http
+POST {{base_url}}/auth/refresh
+Authorization: Bearer {{customer_token}}
+```
+
+**Response:**
+```json
+{
+  "status_code": 200,
+  "message": "Token refreshed successfully",
+  "data": {
+    "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+    "user": {
+      "id": 7,
+      "name": "Customer",
+      "email": "customer@example.com",
+      "role": "customer"
+    }
+  }
+}
+```
+
 **Create Snap Token**
 ```http
 POST {{base_url}}/customer/payment/create-token
@@ -180,28 +332,63 @@ Content-Type: application/json
 }
 ```
 
-**Checkout Process Response (truncated)**
+**Checkout Process Response**
 ```json
 {
+  "status_code": 200,
   "message": "Checkout berhasil",
-  "order": {
-    "id": 451,
-    "status": "Menunggu Pembayaran",
-    "total_harga": 150000,
-    "ongkir": 30000,
-    "items": [
+  "data": {
+    "order": {
+      "id": 451,
+      "status": "Menunggu Pembayaran",
+      "total_harga": 150000,
+      "ongkir": 30000,
+      "items": [
+        {
+          "produk_id": 45,
+          "nama": "Athleon Pro Jersey",
+          "varians": ["Ukuran: L", "Warna: Hitam"],
+          "jumlah": 1,
+          "subtotal": 150000
+        }
+      ]
+    },
+    "midtrans": {
+      "snap_token": "82c512f6-...",
+      "redirect_url": "https://app.midtrans.com/snap/v3/redirection/82c512f6-..."
+    }
+  }
+}
+```
+
+**Notifications Response**
+```json
+{
+  "status_code": 200,
+  "message": "Notifikasi berhasil diambil",
+  "data": {
+    "notifications": [
       {
-        "produk_id": 45,
-        "nama": "Athleon Pro Jersey",
-        "varians": ["Ukuran: L", "Warna: Hitam"],
-        "jumlah": 1,
-        "subtotal": 150000
+        "id": 5,
+        "user_id": 7,
+        "pesanan_id": 10,
+        "type": "order_created",
+        "title": "Pesanan Dibuat",
+        "message": "Pesanan Anda telah berhasil dibuat.",
+        "is_read": 0,
+        "read_at": null,
+        "sent_at": "2025-11-27T04:46:30.000000Z"
       }
-    ]
-  },
-  "midtrans": {
-    "snap_token": "82c512f6-...",
-    "redirect_url": "https://app.midtrans.com/snap/v3/redirection/82c512f6-..."
+    ],
+    "pagination": {
+      "total": 5,
+      "per_page": 20,
+      "current_page": 1,
+      "last_page": 1
+    },
+    "meta": {
+      "unread_count": 1
+    }
   }
 }
 ```

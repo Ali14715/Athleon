@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Loader2, Search, Filter, Package, ChevronRight, Clock, CheckCircle, Star, Truck, AlertTriangle } from "lucide-react";
-import api from "@/lib/api";
+import api, { isSuccess, getData, getErrorMessage } from "@/lib/api";
 
 interface ItemPesanan {
   id: number;
@@ -143,12 +143,13 @@ const Orders = () => {
       }
       const response = await api.get("/api/customer/pesanan");
       
-      if (response.data.success) {
-        setOrders(response.data.data);
+      if (isSuccess(response)) {
+        const ordersData = getData(response) as Order[];
+        setOrders(ordersData);
         
         // Auto-check payment status for pending Midtrans payments (only on initial load)
         if (autoCheckPayment) {
-          const pendingMidtransOrders = response.data.data.filter(
+          const pendingMidtransOrders = ordersData.filter(
             (order: Order) => order.status === "Belum Dibayar" && order.metode_pembayaran === "midtrans"
           );
           
@@ -171,8 +172,8 @@ const Orders = () => {
             
             // Refresh immediately after checks complete
             const refreshResponse = await api.get("/api/customer/pesanan");
-            if (refreshResponse.data.success) {
-              setOrders(refreshResponse.data.data);
+            if (isSuccess(refreshResponse)) {
+              setOrders(getData(refreshResponse));
             }
           }
         }
@@ -199,7 +200,7 @@ const Orders = () => {
       setActionLoading(orderToCancel.id);
       const response = await api.post(`/api/customer/pesanan/${orderToCancel.id}/cancel`);
       
-      if (response.data.success) {
+      if (isSuccess(response)) {
         toast.success("Pesanan berhasil dibatalkan");
         setCancelDialogOpen(false);
         setOrderToCancel(null);
@@ -207,7 +208,7 @@ const Orders = () => {
       }
     } catch (error: any) {
       console.error("Gagal membatalkan pesanan:", error);
-      toast.error(error.response?.data?.message || "Gagal membatalkan pesanan");
+      toast.error(getErrorMessage(error));
     } finally {
       setActionLoading(null);
     }
@@ -220,8 +221,8 @@ const Orders = () => {
         order_id: orderId
       });
       
-      if (response.data.success) {
-        const { order_status, payment_status } = response.data.data;
+      if (isSuccess(response)) {
+        const { order_status, payment_status } = getData(response) as { order_status: string; payment_status: string };
         
         // Show appropriate message based on status
         if (payment_status === 'paid') {
@@ -238,7 +239,7 @@ const Orders = () => {
       }
     } catch (error: any) {
       console.error("Gagal memeriksa status pembayaran:", error);
-      toast.error(error.response?.data?.message || "Gagal memeriksa status pembayaran");
+      toast.error(getErrorMessage(error));
     } finally {
       setCheckingPayment(null);
     }
@@ -254,13 +255,13 @@ const Orders = () => {
         { status: "Selesai" }
       );
       
-      if (response.data.success) {
+      if (isSuccess(response)) {
         toast.success("Pesanan dikonfirmasi selesai");
         fetchOrders(false);
       }
     } catch (error: any) {
       console.error("Gagal konfirmasi pesanan:", error);
-      toast.error(error.response?.data?.message || "Gagal konfirmasi pesanan");
+      toast.error(getErrorMessage(error));
     } finally {
       setActionLoading(null);
     }

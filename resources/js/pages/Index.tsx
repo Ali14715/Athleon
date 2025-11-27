@@ -6,7 +6,7 @@ import ProductCard from "@/components/ProductCard";
 import InfiniteProductGrid from "@/components/InfiniteProductGrid";
 import SEOHead from "@/components/SEOHead";
 import BannerCarousel from "@/components/BannerCarousel";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 
 interface Kategori {
@@ -49,8 +49,6 @@ const Index = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const categorySliderRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     fetchBestSellers();
     fetchCategories();
@@ -78,12 +76,6 @@ const Index = () => {
     } catch (error) {
       console.error("Error fetching categories:", error);
     }
-  };
-
-  const scrollCategories = (direction: "left" | "right") => {
-    if (!categorySliderRef.current) return;
-    const scrollAmount = direction === "left" ? -320 : 320;
-    categorySliderRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
   };
 
   return (

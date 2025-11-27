@@ -41,7 +41,7 @@ import {
   Filter,
 } from "lucide-react";
 import { toast } from "sonner";
-import api from "@/lib/api";
+import api, { isSuccess, getErrorMessage } from "@/lib/api";
 
 interface User {
   id: number;
@@ -97,7 +97,7 @@ const AdminUsers = () => {
 
       const response = await api.get(`/api/admin/users?${params}`);
 
-      if (response.data.success) {
+      if (isSuccess(response)) {
         setUsers(response.data.users.data);
         setPagination({
           current_page: response.data.users.current_page,
@@ -107,7 +107,7 @@ const AdminUsers = () => {
         });
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Gagal memuat data pengguna");
+      toast.error(getErrorMessage(error));
     } finally {
       setLoading(false);
     }
@@ -135,13 +135,13 @@ const AdminUsers = () => {
     try {
       const response = await api.put(`/api/admin/users/${editingUser.id}`, editForm);
 
-      if (response.data.success) {
+      if (isSuccess(response)) {
         toast.success("Pengguna berhasil diperbarui");
         setEditDialogOpen(false);
         fetchUsers();
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Gagal memperbarui pengguna");
+      toast.error(getErrorMessage(error));
     }
   };
 
@@ -156,13 +156,13 @@ const AdminUsers = () => {
     try {
       const response = await api.delete(`/api/admin/users/${deletingUser.id}`);
 
-      if (response.data.success) {
+      if (isSuccess(response)) {
         toast.success("Pengguna berhasil dihapus");
         setDeleteDialogOpen(false);
         fetchUsers();
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Gagal menghapus pengguna");
+      toast.error(getErrorMessage(error));
     }
   };
 

@@ -64,14 +64,15 @@ const AdminLayout = ({ children, title }: AdminLayoutProps) => {
       }
 
       const response = await api.post("/api/auth/me");
+      const userData = response.data?.data || response.data;
       
-      if (response.data.role !== "admin") {
+      if (userData.role !== "admin") {
         toast.error("Akses ditolak. Hanya admin yang dapat mengakses halaman ini.");
         router.visit("/");
         return;
       }
 
-      setUser(response.data);
+      setUser(userData);
     } catch (error) {
       console.error("Error fetching user:", error);
       localStorage.removeItem("token");

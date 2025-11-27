@@ -60,11 +60,7 @@ class ProdukController extends Controller
 
         $produk = $query->paginate(12);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Daftar produk berhasil diambil',
-            'data' => $produk
-        ]);
+        return $this->paginatedResponse($produk, 'Daftar produk berhasil diambil');
     }
 
     // Detail produk
@@ -73,15 +69,9 @@ class ProdukController extends Controller
         $produk = Produk::with(['varians', 'kategori'])->find($id);
 
         if (!$produk) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Produk tidak ditemukan'
-            ], 404);
+            return $this->notFoundResponse('Produk tidak ditemukan');
         }
 
-        return response()->json([
-            'success' => true,
-            'data' => $produk
-        ]);
+        return $this->successResponse($produk, 'Produk retrieved successfully');
     }
 }

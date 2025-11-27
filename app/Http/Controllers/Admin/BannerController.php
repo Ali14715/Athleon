@@ -16,7 +16,7 @@ class BannerController extends Controller
     public function index()
     {
         $banners = Banner::orderBy('order')->orderBy('created_at', 'desc')->get();
-        return response()->json($banners);
+        return $this->successResponse($banners, 'Banners retrieved successfully');
     }
 
     /**
@@ -35,7 +35,7 @@ class BannerController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            return $this->validationErrorResponse('Validasi gagal', $validator->errors());
         }
 
         $data = $request->only(['title', 'description', 'link_url', 'button_text', 'is_active', 'order']);
@@ -48,10 +48,7 @@ class BannerController extends Controller
 
         $banner = Banner::create($data);
 
-        return response()->json([
-            'message' => 'Banner berhasil ditambahkan',
-            'banner' => $banner
-        ], 201);
+        return $this->createdResponse($banner, 'Banner berhasil ditambahkan');
     }
 
     /**
@@ -59,8 +56,13 @@ class BannerController extends Controller
      */
     public function show(string $id)
     {
-        $banner = Banner::findOrFail($id);
-        return response()->json($banner);
+        $banner = Banner::find($id);
+        
+        if (!$banner) {
+            return $this->notFoundResponse('Banner tidak ditemukan');
+        }
+        
+        return $this->successResponse($banner, 'Banner retrieved successfully');
     }
 
     /**
@@ -68,7 +70,11 @@ class BannerController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        $banner = Banner::findOrFail($id);
+        $banner = Banner::find($id);
+        
+        if (!$banner) {
+            return $this->notFoundResponse('Banner tidak ditemukan');
+        }
 
         $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:255',
@@ -81,7 +87,7 @@ class BannerController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            return $this->validationErrorResponse('Validasi gagal', $validator->errors());
         }
 
         $data = $request->only(['title', 'description', 'link_url', 'button_text', 'is_active', 'order']);
@@ -109,10 +115,7 @@ class BannerController extends Controller
 
         $banner->update($data);
 
-        return response()->json([
-            'message' => 'Banner berhasil diupdate',
-            'banner' => $banner
-        ]);
+        return $this->successResponse($banner, 'Banner berhasil diupdate');
     }
 
     /**
@@ -120,7 +123,11 @@ class BannerController extends Controller
      */
     public function destroy(string $id)
     {
-        $banner = Banner::findOrFail($id);
+        $banner = Banner::find($id);
+        
+        if (!$banner) {
+            return $this->notFoundResponse('Banner tidak ditemukan');
+        }
 
         // Delete image - get raw attribute to avoid accessor
         if ($banner->image_url) {
@@ -139,6 +146,6 @@ class BannerController extends Controller
 
         $banner->delete();
 
-        return response()->json(['message' => 'Banner berhasil dihapus']);
+        return $this->successResponse(null, 'Banner berhasil dihapus');
     }
 }

@@ -41,16 +41,9 @@ class UserController extends Controller
             $perPage = $request->get('per_page', 15);
             $users = $query->paginate($perPage);
 
-            return response()->json([
-                'success' => true,
-                'users' => $users
-            ]);
+            return $this->paginatedResponse($users, 'Users retrieved successfully');
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal mengambil data pengguna',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->serverErrorResponse('Gagal mengambil data pengguna: ' . $e->getMessage());
         }
     }
 
@@ -60,17 +53,15 @@ class UserController extends Controller
     public function show($id)
     {
         try {
-            $user = User::findOrFail($id);
+            $user = User::find($id);
 
-            return response()->json([
-                'success' => true,
-                'user' => $user
-            ]);
+            if (!$user) {
+                return $this->notFoundResponse('Pengguna tidak ditemukan');
+            }
+
+            return $this->successResponse($user, 'User retrieved successfully');
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Pengguna tidak ditemukan'
-            ], 404);
+            return $this->serverErrorResponse('Gagal mengambil data pengguna: ' . $e->getMessage());
         }
     }
 
@@ -80,7 +71,11 @@ class UserController extends Controller
     public function update(Request $request, $id)
     {
         try {
-            $user = User::findOrFail($id);
+            $user = User::find($id);
+
+            if (!$user) {
+                return $this->notFoundResponse('Pengguna tidak ditemukan');
+            }
 
             $validator = Validator::make($request->all(), [
                 'name' => 'sometimes|string|max:255',
@@ -90,11 +85,7 @@ class UserController extends Controller
             ]);
 
             if ($validator->fails()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Validasi gagal',
-                    'errors' => $validator->errors()
-                ], 422);
+                return $this->validationErrorResponse('Validasi gagal', $validator->errors());
             }
 
             // Update fields
@@ -116,17 +107,9 @@ class UserController extends Controller
 
             $user->save();
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Pengguna berhasil diperbarui',
-                'user' => $user
-            ]);
+            return $this->successResponse($user, 'Pengguna berhasil diperbarui');
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal memperbarui pengguna',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->serverErrorResponse('Gagal memperbarui pengguna: ' . $e->getMessage());
         }
     }
 
@@ -136,28 +119,22 @@ class UserController extends Controller
     public function destroy($id)
     {
         try {
-            $user = User::findOrFail($id);
+            $user = User::find($id);
+
+            if (!$user) {
+                return $this->notFoundResponse('Pengguna tidak ditemukan');
+            }
 
             // Prevent deleting yourself
             if ($user->id === auth()->id()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Anda tidak dapat menghapus akun Anda sendiri'
-                ], 400);
+                return $this->badRequestResponse('Anda tidak dapat menghapus akun Anda sendiri');
             }
 
             $user->delete();
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Pengguna berhasil dihapus'
-            ]);
+            return $this->successResponse(null, 'Pengguna berhasil dihapus');
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal menghapus pengguna',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->serverErrorResponse('Gagal menghapus pengguna: ' . $e->getMessage());
         }
     }
 }

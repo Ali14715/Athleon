@@ -35,19 +35,13 @@ class PaymentController extends Controller
 
             // Check if order belongs to authenticated user
             if ($pesanan->user_id !== auth()->id()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Unauthorized access to this order',
-                ], 403);
+                return $this->forbiddenResponse('Unauthorized access to this order');
             }
 
             // Check if order already paid
             $pembayaran = Pembayaran::firstOrNew(['pesanan_id' => $pesanan->id]);
             if ($pembayaran->exists && $pembayaran->status === 'paid') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Order already paid',
-                ], 400);
+                return $this->badRequestResponse('Order already paid');
             }
 
             // Prepare transaction details
@@ -103,17 +97,13 @@ class PaymentController extends Controller
             ]);
             $pembayaran->save();
 
-            return response()->json([
-                'success' => true,
+            return $this->successResponse([
                 'snap_token' => $snapToken,
                 'order_id' => $pesanan->id,
-            ]);
+            ], 'Snap token created successfully');
 
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to create payment: ' . $e->getMessage(),
-            ], 500);
+            return $this->serverErrorResponse('Failed to create payment: ' . $e->getMessage());
         }
     }
 
@@ -140,7 +130,7 @@ class PaymentController extends Controller
             $pesanan = $pesananId ? Pesanan::find($pesananId) : null;
 
             if (!$pembayaran || !$pesanan) {
-                return response()->json(['message' => 'Payment or Order not found'], 404);
+                return $this->notFoundResponse('Payment or Order not found');
             }
 
             if ($transactionStatus === 'capture') {
@@ -174,12 +164,10 @@ class PaymentController extends Controller
             $pembayaran->save();
             $pesanan->save();
 
-            return response()->json(['message' => 'Notification handled successfully']);
+            return $this->successResponse(null, 'Notification handled successfully');
 
         } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Failed to handle notification: ' . $e->getMessage(),
-            ], 500);
+            return $this->serverErrorResponse('Failed to handle notification: ' . $e->getMessage());
         }
     }
 
@@ -197,19 +185,13 @@ class PaymentController extends Controller
 
             // Check if order belongs to authenticated user
             if ($pesanan->user_id !== auth()->id()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Unauthorized access to this order',
-                ], 403);
+                return $this->forbiddenResponse('Unauthorized access to this order');
             }
 
             $pembayaran = Pembayaran::where('pesanan_id', $pesanan->id)->first();
 
             if (!$pembayaran) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Payment not found',
-                ], 404);
+                return $this->notFoundResponse('Payment not found');
             }
 
             // Check status from Midtrans if transaction_id exists
@@ -284,23 +266,17 @@ class PaymentController extends Controller
                 }
             }
 
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'order_id' => $pesanan->id,
-                    'order_status' => $pesanan->status,
-                    'payment_status' => $pembayaran->status,
-                    'payment_method' => $pembayaran->metode,
-                    'amount' => $pembayaran->jumlah_bayar,
-                    'paid_at' => $pembayaran->tanggal_bayar,
-                ],
-            ]);
+            return $this->successResponse([
+                'order_id' => $pesanan->id,
+                'order_status' => $pesanan->status,
+                'payment_status' => $pembayaran->status,
+                'payment_method' => $pembayaran->metode,
+                'amount' => $pembayaran->jumlah_bayar,
+                'paid_at' => $pembayaran->tanggal_bayar,
+            ], 'Payment status retrieved successfully');
 
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to check status: ' . $e->getMessage(),
-            ], 500);
+            return $this->serverErrorResponse('Failed to check status: ' . $e->getMessage());
         }
     }
 

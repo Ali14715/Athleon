@@ -3,11 +3,84 @@
 ## Recent Updates (Nov 2025)
 
 ### Key Improvements
-1. **Variant Handling**: Products with/without variants handled via `loadVariants()` method
-2. **Area ID Fallback**: 3-pattern search (Kelurahan+Kota, Kota, Kelurahan) for missing area_id
-3. **Stock Management**: Automatic stock reduction when order status changes to "Dikemas"
-4. **Security**: Clean callback URLs (no query params), encrypted product IDs in frontend
-5. **UI Consistency**: Order IDs displayed as ATH{4digit}{3digit} format in frontend
+1. **API Response Standardization**: All endpoints return `{ status_code, message, data }` format
+2. **ApiResponseTrait**: Centralized response handling in backend (21+ controllers)
+3. **Frontend Helper Functions**: `isSuccess()`, `getData()`, `getMessage()`, `getErrorMessage()`
+4. **JWT Auto-Refresh**: Automatic token refresh with request queuing mechanism
+5. **Backward Compatibility**: Response interceptor injects `success` for legacy code
+6. **Variant Handling**: Products with/without variants handled via `loadVariants()` method
+7. **Area ID Fallback**: 3-pattern search (Kelurahan+Kota, Kota, Kelurahan) for missing area_id
+8. **Stock Management**: Automatic stock reduction when order status changes to "Dikemas"
+9. **Security**: Clean callback URLs (no query params), encrypted product IDs in frontend
+10. **UI Consistency**: Order IDs displayed as ATH{4digit}{3digit} format in frontend
+
+---
+
+## API Response Flow
+
+```mermaid
+flowchart TB
+    subgraph Backend ["Backend (Laravel)"]
+        Controller[Controller]
+        Trait[ApiResponseTrait]
+        Response[JSON Response]
+    end
+    
+    subgraph Frontend ["Frontend (React)"]
+        Axios[Axios Instance]
+        Interceptor[Response Interceptor]
+        Helpers[Helper Functions]
+        Component[React Component]
+    end
+    
+    Controller -->|uses| Trait
+    Trait -->|generates| Response
+    Response -->|"{ status_code, message, data }"| Axios
+    Axios -->|raw response| Interceptor
+    Interceptor -->|"inject success for backward compat"| Helpers
+    Helpers -->|"isSuccess(), getData()"| Component
+```
+
+### Response Processing Flow
+
+```mermaid
+flowchart LR
+    A[API Response] --> B{status_code exists?}
+    B -->|Yes| C[Use status_code]
+    B -->|No| D[Use HTTP status]
+    C --> E{success undefined?}
+    D --> E
+    E -->|Yes| F[Inject success = status_code >= 200 && < 300]
+    E -->|No| G[Keep existing success]
+    F --> H[Return to Component]
+    G --> H
+```
+
+---
+
+## JWT Token Refresh Flow
+
+```mermaid
+flowchart TB
+    A[API Request] --> B{Token in localStorage?}
+    B -->|No| C[Request without Auth]
+    B -->|Yes| D[Add Bearer Token Header]
+    D --> E[Send Request]
+    E --> F{Response Status?}
+    F -->|200 OK| G[Return Data]
+    F -->|401 Token Expired| H{Is Refreshing?}
+    H -->|No| I[Call /auth/refresh]
+    H -->|Yes| J[Add to Queue]
+    I --> K{Refresh Success?}
+    K -->|Yes| L[Store New Token]
+    L --> M[Retry Original Request]
+    L --> N[Execute Queued Requests]
+    K -->|No| O[Clear Token & Redirect Login]
+    M --> G
+    N --> G
+    J --> P[Wait for Refresh]
+    P --> G
+```
 
 ---
 

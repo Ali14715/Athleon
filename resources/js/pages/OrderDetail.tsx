@@ -41,10 +41,10 @@ import {
   XCircle,
   Star,
   User,
-  Mail,
+  // Mail removed - unused
   ShoppingBag
 } from "lucide-react";
-import api from "@/lib/api";
+import api, { isSuccess, getData, getErrorMessage } from "@/lib/api";
 
 interface ItemPesanan {
   id: number;
@@ -167,8 +167,8 @@ const OrderDetail = ({ id }: Props) => {
     try {
       setLoading(true);
       const response = await api.get(`/api/customer/pesanan/${id}`);
-      if (response.data.success) {
-        const orderData = response.data.data;
+      if (isSuccess(response)) {
+        const orderData = getData(response) as Order;
         setOrder(orderData);
         
         // Fetch tracking if order is shipped and has tracking number
@@ -179,7 +179,7 @@ const OrderDetail = ({ id }: Props) => {
       }
     } catch (error: any) {
       console.error("Error fetching order detail:", error);
-      toast.error(error.response?.data?.message || "Gagal memuat detail pesanan");
+      toast.error(getErrorMessage(error));
       router.visit("/orders");
     } finally {
       setLoading(false);
@@ -235,8 +235,8 @@ const OrderDetail = ({ id }: Props) => {
         }
       });
       
-      if (response.data.success && response.data.data) {
-        const data = response.data.data;
+      if (isSuccess(response) && getData(response)) {
+        const data = getData(response) as { history?: any[]; summary?: any; detail?: any };
         setTrackingData(data.history || []);
         setTrackingSummary(data.summary || null);
         setTrackingDetail(data.detail || null);
@@ -283,13 +283,13 @@ const OrderDetail = ({ id }: Props) => {
       setActionLoading(true);
       setShowCancelDialog(false);
       const response = await api.post(`/api/customer/pesanan/${order?.id}/cancel`);
-      if (response.data.success) {
+      if (isSuccess(response)) {
         toast.success("Pesanan berhasil dibatalkan");
         fetchOrderDetail();
       }
     } catch (error: any) {
       console.error("Error canceling order:", error);
-      toast.error(error.response?.data?.message || "Gagal membatalkan pesanan");
+      toast.error(getErrorMessage(error));
     } finally {
       setActionLoading(false);
     }
@@ -300,13 +300,13 @@ const OrderDetail = ({ id }: Props) => {
       setActionLoading(true);
       setShowCompleteDialog(false);
       const response = await api.post(`/api/customer/pesanan/${order?.id}/complete`);
-      if (response.data.success) {
+      if (isSuccess(response)) {
         toast.success("Pesanan selesai");
         fetchOrderDetail();
       }
     } catch (error: any) {
       console.error("Error completing order:", error);
-      toast.error(error.response?.data?.message || "Gagal menyelesaikan pesanan");
+      toast.error(getErrorMessage(error));
     } finally {
       setActionLoading(false);
     }
@@ -322,7 +322,7 @@ const OrderDetail = ({ id }: Props) => {
         review: reviewText
       });
       
-      if (response.data.success) {
+      if (isSuccess(response)) {
         toast.success("Terima kasih atas review Anda!");
         setShowRatingDialog(false);
         setRating(5);
@@ -330,7 +330,7 @@ const OrderDetail = ({ id }: Props) => {
       }
     } catch (error: any) {
       console.error("Error submitting rating:", error);
-      toast.error(error.response?.data?.message || "Gagal mengirim rating");
+      toast.error(getErrorMessage(error));
     } finally {
       setSubmittingRating(false);
     }

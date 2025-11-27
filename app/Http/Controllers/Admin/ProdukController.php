@@ -302,19 +302,7 @@ class ProdukController extends Controller
             $item->load('varians');
         }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Daftar produk berhasil diambil',
-            'data' => $data,
-            'pagination' => [
-                'total' => $produk->total(),
-                'per_page' => $produk->perPage(),
-                'current_page' => $produk->currentPage(),
-                'last_page' => $produk->lastPage(),
-                'from' => $produk->firstItem(),
-                'to' => $produk->lastItem(),
-            ]
-        ]);
+        return $this->paginatedResponse($produk, 'Daftar produk berhasil diambil');
     }
 
     /**
@@ -366,11 +354,7 @@ class ProdukController extends Controller
         
         $produk->load(['kategori', 'varians']);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Produk berhasil ditambahkan',
-            'data' => $produk
-        ], 201);
+        return $this->createdResponse($produk, 'Produk berhasil ditambahkan');
     }
 
 
@@ -383,10 +367,7 @@ class ProdukController extends Controller
         $produk = Produk::with('kategori')->find($id);
 
         if (!$produk) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Produk tidak ditemukan'
-            ], 404);
+            return $this->notFoundResponse('Produk tidak ditemukan');
         }
 
         // Validasi input dari form-data
@@ -441,11 +422,7 @@ class ProdukController extends Controller
         
         $produk->load(['kategori', 'varians']);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Produk berhasil diupdate',
-            'data' => $produk
-        ]);
+        return $this->successResponse($produk, 'Produk berhasil diupdate');
     }
     
 
@@ -458,10 +435,7 @@ class ProdukController extends Controller
         $produk = Produk::find($id);
 
         if (!$produk) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Produk tidak ditemukan'
-            ], 404);
+            return $this->notFoundResponse('Produk tidak ditemukan');
         }
 
         $this->deleteStoredImage($produk->gambar);
@@ -473,10 +447,7 @@ class ProdukController extends Controller
 
         $produk->delete();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Produk berhasil dihapus'
-        ]);
+        return $this->successResponse(null, 'Produk berhasil dihapus');
     }
 
         /**
@@ -487,15 +458,9 @@ class ProdukController extends Controller
         $produk = Produk::with(['kategori', 'varians'])->find($id);
 
         if (!$produk) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Produk tidak ditemukan'
-            ], 404);
+            return $this->notFoundResponse('Produk tidak ditemukan');
         }
 
-        return response()->json([
-            'success' => true,
-            'data' => $produk
-        ]);
+        return $this->successResponse($produk);
     }
 }

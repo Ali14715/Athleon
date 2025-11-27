@@ -36,7 +36,9 @@ export default function BannerCarousel() {
   const fetchBanners = async () => {
     try {
       const response = await axios.get("/api/banners");
-      setBanners(response.data);
+      // Handle new API format: { status_code, message, data }
+      const bannersData = response.data?.data || response.data || [];
+      setBanners(Array.isArray(bannersData) ? bannersData : []);
     } catch (error) {
       console.error("Error fetching banners:", error);
     } finally {

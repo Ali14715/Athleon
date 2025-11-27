@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Minus, Plus, Trash2, Loader2, ShoppingCart, Edit3 } from "lucide-react";
 import { toast } from "sonner";
-import api from "@/lib/api";
+import api, { isSuccess, getData } from "@/lib/api";
 import {
   Dialog,
   DialogContent,
@@ -119,8 +119,9 @@ const Cart = () => {
       setLoading(true);
       const response = await api.get("/api/customer/keranjang");
       
-      if (response.data.success && response.data.data) {
-        const items = response.data.data.items || [];
+      if (isSuccess(response) && getData(response)) {
+        const data = getData(response) as { items?: any[] };
+        const items = data.items || [];
         setCartItems(items);
       } else {
         setCartItems([]);
@@ -142,13 +143,13 @@ const Cart = () => {
     setLoadingRecommended(true);
     try {
       const response = await api.get("/api/produk");
-      let productsData = response.data;
       
-      // Handle different response structures
+      // Handle new API format: { status_code, message, data }
+      let productsData = response.data?.data || response.data;
+      
+      // Handle paginated response with nested data
       if (productsData && typeof productsData === 'object') {
-        if (Array.isArray(productsData.data?.data)) {
-          productsData = productsData.data.data;
-        } else if (Array.isArray(productsData.data)) {
+        if (Array.isArray(productsData.data)) {
           productsData = productsData.data;
         } else if (!Array.isArray(productsData)) {
           productsData = [];
@@ -186,7 +187,7 @@ const Cart = () => {
         { jumlah: newQuantity }
       );
 
-      if (response.data.success) {
+      if (isSuccess(response)) {
         fetchCart();
         window.dispatchEvent(new Event('cartUpdated'));
         toast.success("Jumlah produk diperbarui");
@@ -208,7 +209,7 @@ const Cart = () => {
         `/api/customer/keranjang/${itemId}`
       );
 
-      if (response.data.success) {
+      if (isSuccess(response)) {
         fetchCart();
         window.dispatchEvent(new Event('cartUpdated'));
         toast.success("Item dihapus dari keranjang");
@@ -269,7 +270,7 @@ const Cart = () => {
         }
       );
 
-      if (response.data.success) {
+      if (isSuccess(response)) {
         fetchCart();
         window.dispatchEvent(new Event('cartUpdated'));
         toast.success("Varian berhasil diubah");

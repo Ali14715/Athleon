@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { ShoppingCart, Loader2, Minus, Plus } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
+import { getErrorMessage, isSuccess } from "@/lib/api";
 import { router } from "@inertiajs/react";
 import { formatRupiah } from "@/lib/utils";
 
@@ -131,7 +132,7 @@ const VariantPickerDialog = ({
         }
       );
 
-      if (response.data.success) {
+      if (isSuccess(response)) {
         if (mode === 'buy') {
           // Clear any previous cart checkout data
           sessionStorage.removeItem('selectedCartItems');
@@ -160,10 +161,8 @@ const VariantPickerDialog = ({
         localStorage.removeItem("token");
         toast.error("Sesi Anda telah berakhir. Silakan login kembali.");
         router.visit("/login");
-      } else if (error.response?.data?.message) {
-        toast.error(error.response.data.message);
       } else {
-        toast.error("Gagal menambahkan produk ke keranjang");
+        toast.error(getErrorMessage(error));
       }
     } finally {
       setAdding(false);

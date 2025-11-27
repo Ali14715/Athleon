@@ -48,7 +48,7 @@ import {
   Eye,
   EyeOff
 } from "lucide-react";
-import api from "@/lib/api";
+import api, { isSuccess, getData, getMessage, getErrorMessage } from "@/lib/api";
 import { useNotifications, type NotificationItem } from "@/context/NotificationContext";
 import { formatDistanceToNow } from "date-fns";
 import { Link } from "@inertiajs/react";
@@ -200,8 +200,8 @@ const SecuritySection = () => {
     try {
       const response = await api.post("/api/auth/change-password", formData);
       
-      if (response.data.success) {
-        toast.success(response.data.message);
+      if (isSuccess(response)) {
+        toast.success(getMessage(response));
         
         // Reset form
         setFormData({
@@ -211,7 +211,7 @@ const SecuritySection = () => {
         });
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Gagal mengubah password");
+      toast.error(getErrorMessage(error));
     } finally {
       setLoading(false);
     }
@@ -390,12 +390,13 @@ const Profile = () => {
     const fetchData = async () => {
       try {
         const response = await api.post("/api/auth/me");
-        setUser(response.data);
+        const userData = response.data?.data || response.data;
+        setUser(userData);
         setFormData({
-          name: response.data.name || "",
-          email: response.data.email || "",
-          telepon: response.data.telepon || "",
-          jenis_kelamin: response.data.jenis_kelamin || "",
+          name: userData.name || "",
+          email: userData.email || "",
+          telepon: userData.telepon || "",
+          jenis_kelamin: userData.jenis_kelamin || "",
         });
       } catch (error: any) {
         console.error("Gagal memuat data profil:", error);
@@ -422,8 +423,8 @@ const Profile = () => {
   const fetchAddresses = async () => {
     try {
       const response = await api.get("/api/customer/alamat");
-      if (response.data.success) {
-        setAddresses(response.data.data || []);
+      if (isSuccess(response)) {
+        setAddresses(getData(response) || []);
       }
     } catch (error: any) {
       console.error("Gagal memuat alamat:", error);
@@ -447,7 +448,7 @@ const Profile = () => {
       if (editingAddress) {
         // Update existing address
         const response = await api.put(`/api/customer/alamat/${editingAddress.id}`, data);
-        if (response.data.success) {
+        if (isSuccess(response)) {
           toast.success("Alamat berhasil diperbarui!");
           setShowAddressDialog(false);
           fetchAddresses();
@@ -455,7 +456,7 @@ const Profile = () => {
       } else {
         // Create new address
         const response = await api.post("/api/customer/alamat", data);
-        if (response.data.success) {
+        if (isSuccess(response)) {
           toast.success("Alamat berhasil ditambahkan!");
           setShowAddressDialog(false);
           fetchAddresses();
@@ -463,7 +464,7 @@ const Profile = () => {
       }
     } catch (error: any) {
       console.error("Gagal menyimpan alamat:", error);
-      toast.error(error.response?.data?.message || "Gagal menyimpan alamat");
+      toast.error(getErrorMessage(error));
     } finally {
       setAddressLoading(false);
     }
@@ -472,27 +473,27 @@ const Profile = () => {
   const handleDeleteAddress = async (addressId: number) => {
     try {
       const response = await api.delete(`/api/customer/alamat/${addressId}`);
-      if (response.data.success) {
+      if (isSuccess(response)) {
         toast.success("Alamat berhasil dihapus!");
         setDeletingAddressId(null);
         fetchAddresses();
       }
     } catch (error: any) {
       console.error("Gagal menghapus alamat:", error);
-      toast.error(error.response?.data?.message || "Gagal menghapus alamat");
+      toast.error(getErrorMessage(error));
     }
   };
 
   const handleSetDefaultAddress = async (addressId: number) => {
     try {
       const response = await api.post(`/api/customer/alamat/${addressId}/set-default`);
-      if (response.data.success) {
+      if (isSuccess(response)) {
         toast.success("Alamat utama berhasil diubah!");
         fetchAddresses();
       }
     } catch (error: any) {
       console.error("Gagal mengubah alamat utama:", error);
-      toast.error(error.response?.data?.message || "Gagal mengubah alamat utama");
+      toast.error(getErrorMessage(error));
     }
   };
 
@@ -501,14 +502,14 @@ const Profile = () => {
     try {
       const response = await api.put("/api/customer/profile", formData);
       
-      if (response.data.success) {
-        setUser(response.data.data);
+      if (isSuccess(response)) {
+        setUser(getData(response));
         setEditMode(false);
         toast.success("Profil berhasil diperbarui!");
       }
     } catch (error: any) {
       console.error("Gagal memperbarui profil:", error);
-      toast.error(error.response?.data?.message || "Gagal memperbarui profil");
+      toast.error(getErrorMessage(error));
     } finally {
       setLoading(false);
     }

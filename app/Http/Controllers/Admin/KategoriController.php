@@ -16,11 +16,7 @@ class KategoriController extends Controller
     {
         $kategori = Kategori::query()->withCount('produk')->latest()->get();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Daftar kategori berhasil diambil',
-            'data' => $kategori,
-        ]);
+        return $this->successResponse($kategori, 'Daftar kategori berhasil diambil');
     }
 
     public function store(Request $request)
@@ -36,11 +32,7 @@ class KategoriController extends Controller
 
         $kategori = Kategori::create($validated);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Kategori berhasil ditambahkan',
-            'data' => $kategori,
-        ], 201);
+        return $this->createdResponse($kategori, 'Kategori berhasil ditambahkan');
     }
 
     public function update(Request $request, Kategori $kategori)
@@ -64,11 +56,7 @@ class KategoriController extends Controller
             Produk::where('idKategori', $kategori->id)->update(['kategori' => $kategori->nama]);
         }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Kategori berhasil diperbarui',
-            'data' => $kategori->fresh(),
-        ]);
+        return $this->successResponse($kategori->fresh(), 'Kategori berhasil diperbarui');
     }
 
     public function destroy(Kategori $kategori)
@@ -82,10 +70,7 @@ class KategoriController extends Controller
 
         $kategori->delete();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Kategori berhasil dihapus',
-        ]);
+        return $this->successResponse(null, 'Kategori berhasil dihapus');
     }
 
     private function handleImageUpload(Request $request, ?Kategori $kategori = null): ?string

@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Loader2, Plus, Edit, Trash2, ImageOff } from "lucide-react";
 import { toast } from "sonner";
-import api from "@/lib/api";
+import api, { getErrorMessage } from "@/lib/api";
 
 interface Category {
   id: number;
@@ -160,7 +160,7 @@ const AdminCategories = () => {
       fetchCategories();
     } catch (error: any) {
       console.error("Error saving category:", error);
-      toast.error(error.response?.data?.message || "Gagal menyimpan kategori");
+      toast.error(getErrorMessage(error));
     } finally {
       setSubmitting(false);
     }

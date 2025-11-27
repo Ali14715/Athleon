@@ -4,7 +4,7 @@ import Footer from "@/components/Footer";
 import InfiniteCatalogGrid from "@/components/InfiniteCatalogGrid";
 import SEOHead from "@/components/SEOHead";
 import { Grid3x3, List, SlidersHorizontal, X, Search } from "lucide-react";
-import { Link } from "@inertiajs/react";
+// Link import removed - unused
 
 interface Kategori {
   id: number;
@@ -14,26 +14,6 @@ interface Kategori {
   created_at?: string;
   updated_at?: string;
   gambar_url?: string;
-}
-
-interface ProductVariant {
-  id: number;
-  produk_id: number;
-  nama_varian: string;
-  nilai_varian: string;
-  harga_tambahan: number;
-  stok: number;
-}
-
-interface Product {
-  id: number;
-  nama: string;
-  harga: number;
-  gambar?: string;
-  gambar_url?: string;
-  kategori: string | Kategori;
-  jenisKelamin: string;
-  varians?: ProductVariant[];
 }
 
 const Catalog = () => {

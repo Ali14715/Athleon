@@ -3,10 +3,10 @@ import { Link, router } from "@inertiajs/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Mail, CheckCircle2, Lock, KeyRound, Moon, Sun, ShieldCheck, Clock } from "lucide-react";
+import { ArrowLeft, Mail, CheckCircle2, Lock, KeyRound, Moon, Sun } from "lucide-react";
 import SEOHead from "@/components/SEOHead";
 import { toast } from "sonner";
-import api from "@/lib/api";
+import api, { getErrorMessage, isSuccess, getMessage } from "@/lib/api";
 import { useTheme } from "@/context/ThemeContext";
 
 const ForgotPassword = () => {
@@ -33,16 +33,16 @@ const ForgotPassword = () => {
     try {
       const res = await api.post("/api/auth/send-otp", { email });
 
-      if (res.data.success) {
+      if (isSuccess(res)) {
         toast.success("Kode OTP telah dikirim ke email Anda!");
         setStep("otp");
         setTimeLeft(res.data.expires_in || 600);
       } else {
-        toast.error(res.data.message || "Gagal mengirim OTP");
+        toast.error(getMessage(res) || "Gagal mengirim OTP");
       }
     } catch (error: any) {
       console.error("Send OTP error:", error);
-      toast.error(error.response?.data?.message || "Terjadi kesalahan. Silakan coba lagi.");
+      toast.error(getErrorMessage(error));
     } finally {
       setIsLoading(false);
     }
@@ -55,15 +55,15 @@ const ForgotPassword = () => {
     try {
       const res = await api.post("/api/auth/verify-otp", { email, otp });
 
-      if (res.data.success) {
+      if (isSuccess(res)) {
         toast.success("Kode OTP valid!");
         setStep("password");
       } else {
-        toast.error(res.data.message || "Kode OTP tidak valid");
+        toast.error(getMessage(res) || "Kode OTP tidak valid");
       }
     } catch (error: any) {
       console.error("Verify OTP error:", error);
-      toast.error(error.response?.data?.message || "Kode OTP tidak valid");
+      toast.error(getErrorMessage(error));
     } finally {
       setIsLoading(false);
     }
@@ -92,15 +92,15 @@ const ForgotPassword = () => {
         password_confirmation: passwordConfirmation,
       });
 
-      if (res.data.success) {
+      if (isSuccess(res)) {
         toast.success("Password berhasil direset!");
         setStep("success");
       } else {
-        toast.error(res.data.message || "Gagal reset password");
+        toast.error(getMessage(res) || "Gagal reset password");
       }
     } catch (error: any) {
       console.error("Reset password error:", error);
-      toast.error(error.response?.data?.message || "Terjadi kesalahan. Silakan coba lagi.");
+      toast.error(getErrorMessage(error));
     } finally {
       setIsLoading(false);
     }
@@ -110,13 +110,13 @@ const ForgotPassword = () => {
     setIsLoading(true);
     try {
       const res = await api.post("/api/auth/send-otp", { email });
-      if (res.data.success) {
+      if (isSuccess(res)) {
         toast.success("Kode OTP baru telah dikirim!");
         setTimeLeft(res.data.expires_in || 600);
         setOtp("");
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Gagal mengirim ulang OTP");
+      toast.error(getErrorMessage(error));
     } finally {
       setIsLoading(false);
     }

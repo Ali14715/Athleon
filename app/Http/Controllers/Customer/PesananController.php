@@ -30,17 +30,12 @@ class PesananController extends Controller
                 ->orderBy('created_at', 'desc')
                 ->get();
 
-            return response()->json([
-                'success' => true,
-                'data' => $pesanan
-            ], 200)->header('Cache-Control', 'no-cache, no-store, must-revalidate')
+            return $this->successResponse($pesanan)
+                   ->header('Cache-Control', 'no-cache, no-store, must-revalidate')
                    ->header('Pragma', 'no-cache')
                    ->header('Expires', '0');
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal mengambil data pesanan: ' . $e->getMessage()
-            ], 500);
+            return $this->serverErrorResponse('Gagal mengambil data pesanan: ' . $e->getMessage());
         }
     }
 
@@ -59,27 +54,19 @@ class PesananController extends Controller
                 ->first();
 
             if (!$pesanan) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Pesanan tidak ditemukan'
-                ], 404);
+                return $this->notFoundResponse('Pesanan tidak ditemukan');
             }
 
             // Ensure fresh data from database
             $pesanan->refresh();
             $pesanan->load(['items.produk', 'pembayaran', 'pengiriman']);
 
-            return response()->json([
-                'success' => true,
-                'data' => $pesanan
-            ], 200)->header('Cache-Control', 'no-cache, no-store, must-revalidate')
+            return $this->successResponse($pesanan)
+                   ->header('Cache-Control', 'no-cache, no-store, must-revalidate')
                    ->header('Pragma', 'no-cache')
                    ->header('Expires', '0');
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal mengambil detail pesanan: ' . $e->getMessage()
-            ], 500);
+            return $this->serverErrorResponse('Gagal mengambil detail pesanan: ' . $e->getMessage());
         }
     }
 
@@ -106,10 +93,7 @@ class PesananController extends Controller
 
             if (!$user) {
                 \Log::error('PesananController store: User not authenticated');
-                return response()->json([
-                    'success' => false,
-                    'message' => 'User tidak terautentikasi'
-                ], 401);
+                return $this->unauthorizedResponse('User tidak terautentikasi');
             }
 
             \Log::info('PesananController store: User ID ' . $user->id . ' mencoba membuat pesanan');
@@ -121,18 +105,12 @@ class PesananController extends Controller
 
             if (!$keranjang) {
                 \Log::warning('PesananController store: Keranjang tidak ditemukan untuk user ' . $user->id);
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Keranjang tidak ditemukan. Silakan tambahkan produk ke keranjang terlebih dahulu.'
-                ], 400);
+                return $this->badRequestResponse('Keranjang tidak ditemukan. Silakan tambahkan produk ke keranjang terlebih dahulu.');
             }
 
             if ($keranjang->items->isEmpty()) {
                 \Log::warning('PesananController store: Keranjang kosong untuk user ' . $user->id);
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Keranjang kosong. Silakan tambahkan produk ke keranjang terlebih dahulu.'
-                ], 400);
+                return $this->badRequestResponse('Keranjang kosong. Silakan tambahkan produk ke keranjang terlebih dahulu.');
             }
 
             // Hitung total harga
@@ -191,11 +169,7 @@ class PesananController extends Controller
 
             \Log::info('PesananController store: Pesanan berhasil dibuat dengan ID ' . $pesanan->id);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Pesanan berhasil dibuat',
-                'data' => $pesanan->load('items.produk')
-            ], 201);
+            return $this->createdResponse($pesanan->load('items.produk'), 'Pesanan berhasil dibuat');
         } catch (\Exception $e) {
             DB::rollBack();
             \Log::error('PesananController store: Error - ' . $e->getMessage(), [
@@ -205,10 +179,7 @@ class PesananController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
             
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal membuat pesanan: ' . $e->getMessage()
-            ], 500);
+            return $this->serverErrorResponse('Gagal membuat pesanan: ' . $e->getMessage());
         }
     }
 
@@ -229,10 +200,7 @@ class PesananController extends Controller
                 ->first();
 
             if (!$pesanan) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Pesanan tidak ditemukan'
-                ], 404);
+                return $this->notFoundResponse('Pesanan tidak ditemukan');
             }
 
             // Validasi perubahan status
@@ -251,11 +219,7 @@ class PesananController extends Controller
                     'sent_at' => now(),
                 ]);
                 
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Pesanan berhasil dibatalkan',
-                    'data' => $pesanan
-                ], 200);
+                return $this->successResponse($pesanan, 'Pesanan berhasil dibatalkan');
             }
 
             // Customer bisa konfirmasi pesanan selesai jika status Dikirim
@@ -273,22 +237,12 @@ class PesananController extends Controller
                     'sent_at' => now(),
                 ]);
                 
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Pesanan selesai dikonfirmasi',
-                    'data' => $pesanan
-                ], 200);
+                return $this->successResponse($pesanan, 'Pesanan selesai dikonfirmasi');
             }
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Tidak dapat mengubah status pesanan'
-            ], 400);
+            return $this->badRequestResponse('Tidak dapat mengubah status pesanan');
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal mengubah status: ' . $e->getMessage()
-            ], 500);
+            return $this->serverErrorResponse('Gagal mengubah status: ' . $e->getMessage());
         }
     }
 
@@ -305,18 +259,12 @@ class PesananController extends Controller
                 ->first();
 
             if (!$pesanan) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Pesanan tidak ditemukan'
-                ], 404);
+                return $this->notFoundResponse('Pesanan tidak ditemukan');
             }
 
             // Allow canceling "Belum Dibayar" and "Dikemas" orders
             if (!in_array($pesanan->status, ['Belum Dibayar', 'Dikemas'])) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Pesanan tidak dapat dibatalkan'
-                ], 400);
+                return $this->badRequestResponse('Pesanan tidak dapat dibatalkan');
             }
 
             $pesanan->update(['status' => 'Dibatalkan']);
@@ -326,16 +274,9 @@ class PesananController extends Controller
                 $pesanan->pembayaran->update(['status' => 'cancelled']);
             }
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Pesanan berhasil dibatalkan',
-                'data' => $pesanan
-            ], 200);
+            return $this->successResponse($pesanan, 'Pesanan berhasil dibatalkan');
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal membatalkan pesanan: ' . $e->getMessage()
-            ], 500);
+            return $this->serverErrorResponse('Gagal membatalkan pesanan: ' . $e->getMessage());
         }
     }
 
@@ -352,31 +293,18 @@ class PesananController extends Controller
                 ->first();
 
             if (!$pesanan) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Pesanan tidak ditemukan'
-                ], 404);
+                return $this->notFoundResponse('Pesanan tidak ditemukan');
             }
 
             if ($pesanan->status !== 'Dikirim') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Hanya pesanan dengan status "Dikirim" yang dapat diselesaikan'
-                ], 400);
+                return $this->badRequestResponse('Hanya pesanan dengan status "Dikirim" yang dapat diselesaikan');
             }
 
             $pesanan->update(['status' => 'Selesai']);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Pesanan telah selesai',
-                'data' => $pesanan
-            ], 200);
+            return $this->successResponse($pesanan, 'Pesanan telah selesai');
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal menyelesaikan pesanan: ' . $e->getMessage()
-            ], 500);
+            return $this->serverErrorResponse('Gagal menyelesaikan pesanan: ' . $e->getMessage());
         }
     }
 
@@ -396,25 +324,16 @@ class PesananController extends Controller
                 ->first();
 
             if (!$pesanan) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Pesanan tidak ditemukan'
-                ], 404);
+                return $this->notFoundResponse('Pesanan tidak ditemukan');
             }
 
             if ($pesanan->status !== 'Selesai') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Rating hanya dapat diberikan untuk pesanan yang selesai'
-                ], 400);
+                return $this->badRequestResponse('Rating hanya dapat diberikan untuk pesanan yang selesai');
             }
 
             // Check if already rated
             if ($pesanan->rating !== null) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Pesanan ini sudah pernah diberi rating'
-                ], 400);
+                return $this->badRequestResponse('Pesanan ini sudah pernah diberi rating');
             }
 
             $reviewText = $validated['review'] ?? $validated['feedback'] ?? null;
@@ -424,16 +343,9 @@ class PesananController extends Controller
                 'rating_feedback' => $reviewText,
             ]);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Terima kasih atas penilaian Anda',
-                'data' => $pesanan,
-            ]);
+            return $this->successResponse($pesanan, 'Terima kasih atas penilaian Anda');
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal menyimpan rating: ' . $e->getMessage(),
-            ], 500);
+            return $this->serverErrorResponse('Gagal menyimpan rating: ' . $e->getMessage());
         }
     }
 
@@ -450,17 +362,11 @@ class PesananController extends Controller
                 ->first();
 
             if (!$pesanan) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Pesanan tidak ditemukan'
-                ], 404);
+                return $this->notFoundResponse('Pesanan tidak ditemukan');
             }
 
             if (empty($pesanan->tracking_number) || empty($pesanan->kurir_code)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Nomor resi atau kurir tidak tersedia'
-                ], 400);
+                return $this->badRequestResponse('Nomor resi atau kurir tidak tersedia');
             }
 
             $biteshipService = app(BiteshipService::class);
@@ -469,15 +375,9 @@ class PesananController extends Controller
                 $pesanan->kurir_code
             );
 
-            return response()->json([
-                'success' => true,
-                'data' => $trackingData
-            ], 200);
+            return $this->successResponse($trackingData);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal melacak pengiriman: ' . $e->getMessage()
-            ], 500);
+            return $this->serverErrorResponse('Gagal melacak pengiriman: ' . $e->getMessage());
         }
     }
 }

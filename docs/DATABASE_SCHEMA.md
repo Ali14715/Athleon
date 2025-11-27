@@ -3,6 +3,31 @@
 ## Overview
 Database untuk sistem e-commerce Athleon yang menangani manajemen produk, pesanan, pembayaran, dan pengiriman dengan integrasi Midtrans dan Biteship.
 
+## Recent Updates (Nov 2025)
+
+### API Response Standardization (v2.0)
+All API endpoints now return standardized responses using `ApiResponseTrait`:
+
+```php
+// Standard Success Response
+{
+    "status_code": 200,
+    "message": "Operation berhasil",
+    "data": { ... }
+}
+
+// Error Response
+{
+    "status_code": 400,
+    "message": "Error message",
+    "data": null
+}
+```
+
+### New Components
+- **ApiResponseTrait** (`app/Traits/ApiResponseTrait.php`): Centralized response handling
+- **JWT Refresh**: `/api/auth/refresh` endpoint for token rotation
+
 ---
 
 ## Tables

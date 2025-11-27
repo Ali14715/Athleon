@@ -112,7 +112,7 @@ const SearchDialog = ({ open, onOpenChange }: SearchDialogProps) => {
       )
     : [];
 
-  const handleProductClick = (product: Product) => {
+  const handleProductClick = (_product: Product) => {
     saveToHistory(searchQuery);
     onOpenChange(false);
   };

@@ -14,6 +14,7 @@ Route::get('/cart', [PageController::class, 'cart'])->name('cart');
 Route::get('/checkout', [PageController::class, 'checkout'])->name('checkout');
 Route::get('/profile', [PageController::class, 'profile'])->name('profile');
 Route::get('/orders', [PageController::class, 'orders'])->name('orders');
+Route::get('/payment/callback', [PageController::class, 'paymentCallback'])->name('payment.callback');
 Route::get('/orders/{id}', [PageController::class, 'orderDetail'])->name('orders.detail');
 Route::get('/payment', [PageController::class, 'payment'])->name('payment');
 Route::get('/product/{name}/{idencrypt}', [PageController::class, 'productDetail'])->name('product.detail');

@@ -16,25 +16,27 @@ class DashboardController extends Controller
     {
         $totalProducts = Produk::count();
         $totalOrders = Pesanan::count();
-        $totalCustomers = User::where('role', 'customer')->count();
+        $totalUsers = User::where('role', 'customer')->count();
         
         // Total pendapatan dari pesanan yang sudah selesai
-        $totalRevenue = Pesanan::whereIn('status', ['dikirim', 'selesai'])
+        $totalRevenue = Pesanan::whereIn('status', ['Dikirim', 'Selesai'])
             ->sum('total_harga');
         
         // Hitung pesanan berdasarkan status
-        $pendingOrders = Pesanan::where('status', 'menunggu')->count();
-        $completedOrders = Pesanan::where('status', 'selesai')->count();
-        $cancelledOrders = Pesanan::where('status', 'dibatalkan')->count();
+        $pendingOrders = Pesanan::where('status', 'Belum Dibayar')->count();
+        $packingOrders = Pesanan::where('status', 'Dikemas')->count();
+        $shippedOrders = Pesanan::where('status', 'Dikirim')->count();
+        $completedOrders = Pesanan::where('status', 'Selesai')->count();
+        $cancelledOrders = Pesanan::where('status', 'Dibatalkan')->count();
         
         // Monthly revenue (bulan ini)
-        $monthlyRevenue = Pesanan::whereIn('status', ['dikirim', 'selesai'])
+        $monthlyRevenue = Pesanan::whereIn('status', ['Dikirim', 'Selesai'])
             ->whereMonth('created_at', Carbon::now()->month)
             ->whereYear('created_at', Carbon::now()->year)
             ->sum('total_harga');
         
         // Revenue growth (perbandingan dengan bulan lalu)
-        $lastMonthRevenue = Pesanan::whereIn('status', ['dikirim', 'selesai'])
+        $lastMonthRevenue = Pesanan::whereIn('status', ['Dikirim', 'Selesai'])
             ->whereMonth('created_at', Carbon::now()->subMonth()->month)
             ->whereYear('created_at', Carbon::now()->subMonth()->year)
             ->sum('total_harga');
@@ -53,7 +55,7 @@ class DashboardController extends Controller
                 ->whereYear('created_at', $date->year)
                 ->count();
             
-            $pendapatan = Pesanan::whereIn('status', ['dikirim', 'selesai'])
+            $pendapatan = Pesanan::whereIn('status', ['Dikirim', 'Selesai'])
                 ->whereMonth('created_at', $date->month)
                 ->whereYear('created_at', $date->year)
                 ->sum('total_harga');
@@ -103,9 +105,11 @@ class DashboardController extends Controller
             'stats' => [
                 'totalProducts' => $totalProducts,
                 'totalOrders' => $totalOrders,
-                'totalCustomers' => $totalCustomers,
+                'totalUsers' => $totalUsers,
                 'totalRevenue' => $totalRevenue,
                 'pendingOrders' => $pendingOrders,
+                'packingOrders' => $packingOrders,
+                'shippedOrders' => $shippedOrders,
                 'completedOrders' => $completedOrders,
                 'cancelledOrders' => $cancelledOrders,
                 'monthlyRevenue' => $monthlyRevenue,

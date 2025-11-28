@@ -4,12 +4,15 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Banner;
+use App\Traits\CloudinaryUploadTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class BannerController extends Controller
 {
+    use CloudinaryUploadTrait;
+
     /**
      * Display a listing of the resource.
      */
@@ -41,9 +44,15 @@ class BannerController extends Controller
         $data = $request->only(['title', 'description', 'link_url', 'button_text', 'is_active', 'order']);
 
         if ($request->hasFile('image')) {
-            // Store only the relative path (e.g., 'banners/file.jpg')
-            $imagePath = $request->file('image')->store('banners', 'public');
-            $data['image_url'] = $imagePath;
+            // Try to upload to Cloudinary first
+            $cloudinaryUrl = $this->uploadBannerImage($request->file('image'));
+            if ($cloudinaryUrl) {
+                $data['image_url'] = $cloudinaryUrl;
+            } else {
+                // Fallback to local storage
+                $imagePath = $request->file('image')->store('banners', 'public');
+                $data['image_url'] = $imagePath;
+            }
         }
 
         $banner = Banner::create($data);
@@ -93,24 +102,31 @@ class BannerController extends Controller
         $data = $request->only(['title', 'description', 'link_url', 'button_text', 'is_active', 'order']);
 
         if ($request->hasFile('image')) {
-            // Delete old image - get raw attribute to avoid accessor
+            // Delete old image
             if ($banner->image_url) {
                 $oldPath = $banner->getAttributes()['image_url'] ?? null;
-                if ($oldPath && !str_starts_with($oldPath, 'http')) {
-                    // Remove storage/ prefix if exists
-                    if (str_starts_with($oldPath, 'storage/')) {
-                        $oldPath = substr($oldPath, 8);
-                    }
-                    // Don't delete placeholder.png
-                    if (basename($oldPath) !== 'placeholder.png') {
+                if ($oldPath) {
+                    $service = $this->getCloudinaryService();
+                    if ($service->isCloudinaryUrl($oldPath)) {
+                        $this->deleteFromCloudinary($oldPath);
+                    } elseif (!str_starts_with($oldPath, 'http') && basename($oldPath) !== 'placeholder.png') {
+                        if (str_starts_with($oldPath, 'storage/')) {
+                            $oldPath = substr($oldPath, 8);
+                        }
                         Storage::disk('public')->delete($oldPath);
                     }
                 }
             }
 
-            // Store only the relative path (e.g., 'banners/file.jpg')
-            $imagePath = $request->file('image')->store('banners', 'public');
-            $data['image_url'] = $imagePath;
+            // Try to upload to Cloudinary first
+            $cloudinaryUrl = $this->uploadBannerImage($request->file('image'));
+            if ($cloudinaryUrl) {
+                $data['image_url'] = $cloudinaryUrl;
+            } else {
+                // Fallback to local storage
+                $imagePath = $request->file('image')->store('banners', 'public');
+                $data['image_url'] = $imagePath;
+            }
         }
 
         $banner->update($data);
@@ -129,16 +145,17 @@ class BannerController extends Controller
             return $this->notFoundResponse('Banner tidak ditemukan');
         }
 
-        // Delete image - get raw attribute to avoid accessor
+        // Delete image
         if ($banner->image_url) {
             $path = $banner->getAttributes()['image_url'] ?? null;
-            if ($path && !str_starts_with($path, 'http')) {
-                // Remove storage/ prefix if exists
-                if (str_starts_with($path, 'storage/')) {
-                    $path = substr($path, 8);
-                }
-                // Don't delete placeholder.png
-                if (basename($path) !== 'placeholder.png') {
+            if ($path) {
+                $service = $this->getCloudinaryService();
+                if ($service->isCloudinaryUrl($path)) {
+                    $this->deleteFromCloudinary($path);
+                } elseif (!str_starts_with($path, 'http') && basename($path) !== 'placeholder.png') {
+                    if (str_starts_with($path, 'storage/')) {
+                        $path = substr($path, 8);
+                    }
                     Storage::disk('public')->delete($path);
                 }
             }

@@ -230,6 +230,7 @@ const Login = () => {
                       id="password" 
                       type="password" 
                       placeholder="••••••••" 
+                      autoComplete="current-password"
                       className="pl-11 h-12 border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-lg"
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}

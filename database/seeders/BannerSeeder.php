@@ -7,16 +7,20 @@ use Illuminate\Database\Seeder;
 
 class BannerSeeder extends Seeder
 {
+    private const PLACEHOLDER_URL = 'https://res.cloudinary.com/dalw9amtm/image/upload/v1764316558/placeholders/yjpplgmugckjo7tqah5u.png';
+
     /**
      * Run the database seeds.
      */
     public function run(): void
     {
+        $placeholder = self::PLACEHOLDER_URL;
+
         $banners = [
             [
                 'title' => 'Koleksi Sepatu Terbaru',
                 'description' => 'Dapatkan sepatu olahraga terbaru dengan diskon hingga 50%',
-                'image_url' => 'placeholder.png',
+                'image_url' => $placeholder,
                 'link_url' => 'http://127.0.0.1:8000/catalog',
                 'button_text' => 'Belanja Sekarang',
                 'is_active' => true,
@@ -25,7 +29,7 @@ class BannerSeeder extends Seeder
             [
                 'title' => 'Pakaian Olahraga Premium',
                 'description' => 'Koleksi pakaian olahraga berkualitas tinggi',
-                'image_url' => 'placeholder.png',
+                'image_url' => $placeholder,
                 'link_url' => 'http://127.0.0.1:8000/catalog',
                 'button_text' => 'Lihat Koleksi',
                 'is_active' => true,
@@ -34,7 +38,7 @@ class BannerSeeder extends Seeder
             [
                 'title' => 'Perlengkapan Fitness',
                 'description' => 'Lengkapi home gym Anda dengan alat fitness terbaik',
-                'image_url' => 'placeholder.png',
+                'image_url' => $placeholder,
                 'link_url' => 'http://127.0.0.1:8000/catalog',
                 'button_text' => 'Explore',
                 'is_active' => true,

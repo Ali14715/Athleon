@@ -295,10 +295,28 @@ const AdminProducts = () => {
       product.idKategori ??
       (typeof product.kategori === "object" ? product.kategori.id : undefined);
 
+    // Parse harga safely - handle null, undefined, string with separators, etc.
+    const parsePrice = (value: any): string => {
+      if (value == null) return "0";
+      // If it's a string, remove any thousand separators (dots or commas for formatting)
+      const cleaned = String(value).replace(/[.,]/g, (match, offset, str) => {
+        // Keep the last dot/comma as decimal separator if there are digits after
+        const remaining = str.slice(offset + 1);
+        if (remaining.length <= 2 && /^\d+$/.test(remaining)) {
+          return '.'; // It's a decimal separator
+        }
+        return ''; // It's a thousand separator, remove it
+      });
+      const parsed = parseFloat(cleaned);
+      return isNaN(parsed) ? "0" : Math.floor(parsed).toString();
+    };
+
+    const productHarga = parsePrice(product.harga);
+
     setFormData({
       nama: product.nama,
-      harga: product.harga.toString(),
-      stok: product.stok.toString(),
+      harga: productHarga,
+      stok: (product.stok ?? 0).toString(),
       kategoriId: kategoriId ? kategoriId.toString() : "",
       jenisKelamin: product.jenisKelamin || "",
       deskripsi: product.deskripsi,
@@ -307,6 +325,7 @@ const AdminProducts = () => {
 
     // Try to read from varians relation first (from database), fallback to varian JSON
     let variantRows: VariantRow[] = [];
+    const baseHarga = parseFloat(productHarga) || 0;
     
     if (Array.isArray(product.varians) && product.varians.length > 0) {
       // Load from varians relation (ProdukVarian table)
@@ -314,8 +333,8 @@ const AdminProducts = () => {
         id: generateId(`variant-${product.id}-${index}`),
         size: variant.nilai_varian?.toString() ?? "",
         price: variant.harga_tambahan != null 
-          ? (product.harga + variant.harga_tambahan).toString() 
-          : product.harga.toString(),
+          ? (baseHarga + (parseFloat(String(variant.harga_tambahan)) || 0)).toString() 
+          : productHarga,
         stock: variant.stok != null ? variant.stok.toString() : "",
       }));
     } else if (Array.isArray(product.varian)) {
@@ -323,7 +342,7 @@ const AdminProducts = () => {
       variantRows = product.varian.map((variant, index) => ({
         id: generateId(`variant-${product.id}-${index}`),
         size: variant.ukuran?.toString() ?? "",
-        price: variant.harga != null ? variant.harga.toString() : "",
+        price: variant.harga != null ? parsePrice(variant.harga) : "",
         stock: variant.stok != null ? variant.stok.toString() : "",
       }));
     }

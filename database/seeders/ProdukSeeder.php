@@ -7,11 +7,15 @@ use Illuminate\Database\Seeder;
 
 class ProdukSeeder extends Seeder
 {
+    private const PLACEHOLDER_URL = 'https://res.cloudinary.com/dalw9amtm/image/upload/v1764316558/placeholders/yjpplgmugckjo7tqah5u.png';
+
     /**
      * Run the database seeds.
      */
     public function run(): void
     {
+        $placeholder = self::PLACEHOLDER_URL;
+
         $produkList = [
             // Sepatu Olahraga (Kategori 1)
             [
@@ -23,8 +27,8 @@ class ProdukSeeder extends Seeder
                 'harga' => 1000.00,
                 'stok' => 50,
                 'ukuran' => '38,39,40,41,42,43,44',
-                'gambar' => 'placeholder.png',
-                'galeri' => json_encode(['placeholder.png', 'placeholder.png']),
+                'gambar' => $placeholder,
+                'galeri' => json_encode([$placeholder, $placeholder]),
             ],
             [
                 'idKategori' => 1,
@@ -35,8 +39,8 @@ class ProdukSeeder extends Seeder
                 'harga' => 1000.00,
                 'stok' => 30,
                 'ukuran' => '40,41,42,43,44,45',
-                'gambar' => 'placeholder.png',
-                'galeri' => json_encode(['placeholder.png', 'placeholder.png']),
+                'gambar' => $placeholder,
+                'galeri' => json_encode([$placeholder, $placeholder]),
             ],
             [
                 'idKategori' => 1,
@@ -47,8 +51,8 @@ class ProdukSeeder extends Seeder
                 'harga' => 1000.00,
                 'stok' => 40,
                 'ukuran' => '36,37,38,39,40,41',
-                'gambar' => 'placeholder.png',
-                'galeri' => json_encode(['placeholder.png', 'placeholder.png']),
+                'gambar' => $placeholder,
+                'galeri' => json_encode([$placeholder, $placeholder]),
             ],
 
             // Pakaian Olahraga (Kategori 2)
@@ -61,8 +65,8 @@ class ProdukSeeder extends Seeder
                 'harga' => 1000.00,
                 'stok' => 100,
                 'ukuran' => 'S,M,L,XL,XXL',
-                'gambar' => 'placeholder.png',
-                'galeri' => json_encode(['placeholder.png', 'placeholder.png']),
+                'gambar' => $placeholder,
+                'galeri' => json_encode([$placeholder, $placeholder]),
             ],
             [
                 'idKategori' => 2,
@@ -73,8 +77,8 @@ class ProdukSeeder extends Seeder
                 'harga' => 1000.00,
                 'stok' => 80,
                 'ukuran' => 'S,M,L,XL',
-                'gambar' => 'placeholder.png',
-                'galeri' => json_encode(['placeholder.png', 'placeholder.png']),
+                'gambar' => $placeholder,
+                'galeri' => json_encode([$placeholder, $placeholder]),
             ],
             [
                 'idKategori' => 2,
@@ -85,8 +89,8 @@ class ProdukSeeder extends Seeder
                 'harga' => 1000.00,
                 'stok' => 60,
                 'ukuran' => 'S,M,L,XL,XXL',
-                'gambar' => 'placeholder.png',
-                'galeri' => json_encode(['placeholder.png', 'placeholder.png']),
+                'gambar' => $placeholder,
+                'galeri' => json_encode([$placeholder, $placeholder]),
             ],
             [
                 'idKategori' => 2,
@@ -97,8 +101,8 @@ class ProdukSeeder extends Seeder
                 'harga' => 1000.00,
                 'stok' => 45,
                 'ukuran' => 'M,L,XL,XXL',
-                'gambar' => 'placeholder.png',
-                'galeri' => json_encode(['placeholder.png', 'placeholder.png']),
+                'gambar' => $placeholder,
+                'galeri' => json_encode([$placeholder, $placeholder]),
             ],
 
             // Aksesoris (Kategori 3)
@@ -111,8 +115,8 @@ class ProdukSeeder extends Seeder
                 'harga' => 1000.00,
                 'stok' => 200,
                 'ukuran' => 'Free Size',
-                'gambar' => 'placeholder.png',
-                'galeri' => json_encode(['placeholder.png']),
+                'gambar' => $placeholder,
+                'galeri' => json_encode([$placeholder]),
             ],
             [
                 'idKategori' => 3,
@@ -123,8 +127,8 @@ class ProdukSeeder extends Seeder
                 'harga' => 1000.00,
                 'stok' => 75,
                 'ukuran' => 'Free Size',
-                'gambar' => 'placeholder.png',
-                'galeri' => json_encode(['placeholder.png', 'placeholder.png']),
+                'gambar' => $placeholder,
+                'galeri' => json_encode([$placeholder, $placeholder]),
             ],
             [
                 'idKategori' => 3,
@@ -135,8 +139,8 @@ class ProdukSeeder extends Seeder
                 'harga' => 1000.00,
                 'stok' => 90,
                 'ukuran' => 'S,M,L,XL',
-                'gambar' => 'placeholder.png',
-                'galeri' => json_encode(['placeholder.png']),
+                'gambar' => $placeholder,
+                'galeri' => json_encode([$placeholder]),
             ],
 
             // Tas Olahraga (Kategori 4)
@@ -149,8 +153,8 @@ class ProdukSeeder extends Seeder
                 'harga' => 1000.00,
                 'stok' => 35,
                 'ukuran' => 'Large',
-                'gambar' => 'placeholder.png',
-                'galeri' => json_encode(['placeholder.png', 'placeholder.png']),
+                'gambar' => $placeholder,
+                'galeri' => json_encode([$placeholder, $placeholder]),
             ],
             [
                 'idKategori' => 4,
@@ -161,8 +165,8 @@ class ProdukSeeder extends Seeder
                 'harga' => 1000.00,
                 'stok' => 50,
                 'ukuran' => 'Medium',
-                'gambar' => 'placeholder.png',
-                'galeri' => json_encode(['placeholder.png', 'placeholder.png']),
+                'gambar' => $placeholder,
+                'galeri' => json_encode([$placeholder, $placeholder]),
             ],
 
             // Alat Fitness (Kategori 5)
@@ -175,8 +179,8 @@ class ProdukSeeder extends Seeder
                 'harga' => 1000.00,
                 'stok' => 25,
                 'ukuran' => '5kg',
-                'gambar' => 'placeholder.png',
-                'galeri' => json_encode(['placeholder.png']),
+                'gambar' => $placeholder,
+                'galeri' => json_encode([$placeholder]),
             ],
             [
                 'idKategori' => 5,
@@ -187,8 +191,8 @@ class ProdukSeeder extends Seeder
                 'harga' => 1000.00,
                 'stok' => 40,
                 'ukuran' => '180x60cm',
-                'gambar' => 'placeholder.png',
-                'galeri' => json_encode(['placeholder.png', 'placeholder.png']),
+                'gambar' => $placeholder,
+                'galeri' => json_encode([$placeholder, $placeholder]),
             ],
             [
                 'idKategori' => 5,
@@ -199,8 +203,8 @@ class ProdukSeeder extends Seeder
                 'harga' => 1000.00,
                 'stok' => 60,
                 'ukuran' => 'Set',
-                'gambar' => 'placeholder.png',
-                'galeri' => json_encode(['placeholder.png']),
+                'gambar' => $placeholder,
+                'galeri' => json_encode([$placeholder]),
             ],
         ];
 

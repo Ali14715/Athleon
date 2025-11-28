@@ -58,4 +58,11 @@ return [
         'is_3ds' => env('MIDTRANS_IS_3DS', true),
     ],
 
+    'cloudinary' => [
+        'cloud_name' => env('CLOUDINARY_CLOUD_NAME'),
+        'api_key' => env('CLOUDINARY_API_KEY'),
+        'api_secret' => env('CLOUDINARY_API_SECRET'),
+        'url' => env('CLOUDINARY_URL'),
+    ],
+
 ];

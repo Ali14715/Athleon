@@ -51,6 +51,19 @@ class PageController extends Controller
         return Inertia::render('Orders');
     }
 
+    /**
+     * Handle Midtrans callback redirect
+     * Clean redirect to orders page without exposing payment parameters
+     */
+    public function paymentCallback(Request $request)
+    {
+        // Log payment callback for debugging (optional)
+        // \Log::info('Midtrans callback', $request->all());
+        
+        // Redirect to orders page without any parameters
+        return redirect('/orders');
+    }
+
     public function orderDetail($id): Response
     {
         return Inertia::render('OrderDetail', [

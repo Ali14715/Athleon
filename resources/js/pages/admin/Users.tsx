@@ -98,13 +98,19 @@ const AdminUsers = () => {
       const response = await api.get(`/api/admin/users?${params}`);
 
       if (isSuccess(response)) {
-        setUsers(response.data.users.data);
-        setPagination({
-          current_page: response.data.users.current_page,
-          last_page: response.data.users.last_page,
-          per_page: response.data.users.per_page,
-          total: response.data.users.total,
-        });
+        // API returns { data: [], pagination: {} } directly
+        const userData = Array.isArray(response.data) ? response.data : (response.data.data || []);
+        setUsers(userData);
+        
+        const paginationData = response.data.pagination || response.pagination;
+        if (paginationData) {
+          setPagination({
+            current_page: paginationData.current_page,
+            last_page: paginationData.last_page,
+            per_page: paginationData.per_page,
+            total: paginationData.total,
+          });
+        }
       }
     } catch (error: any) {
       toast.error(getErrorMessage(error));

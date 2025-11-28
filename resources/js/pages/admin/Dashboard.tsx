@@ -14,6 +14,8 @@ interface DashboardStats {
   totalUsers?: number;
   totalRevenue: number;
   pendingOrders: number;
+  packingOrders: number;
+  shippedOrders: number;
   completedOrders: number;
   cancelledOrders: number;
   monthlyRevenue?: number;
@@ -48,6 +50,8 @@ const AdminDashboard = () => {
     totalCustomers: 0,
     totalRevenue: 0,
     pendingOrders: 0,
+    packingOrders: 0,
+    shippedOrders: 0,
     completedOrders: 0,
     cancelledOrders: 0,
     monthlyRevenue: 0,
@@ -65,10 +69,11 @@ const AdminDashboard = () => {
   const fetchDashboardData = async () => {
     try {
       const response = await api.get("/api/admin/dashboard");
-      setStats(response.data.stats || {});
-      setRecentOrders(response.data.recentOrders || []);
-      setSalesData(response.data.salesData || []);
-      setTopProducts(response.data.topProducts || []);
+      const data = response.data.data || response.data; // Handle nested API response
+      setStats(data.stats || {});
+      setRecentOrders(data.recentOrders || []);
+      setSalesData(data.salesData || []);
+      setTopProducts(data.topProducts || []);
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
     } finally {
@@ -100,7 +105,7 @@ const AdminDashboard = () => {
       icon: ShoppingCart,
       color: "text-emerald-600",
       bgColor: "bg-gradient-to-br from-[#059669] to-emerald-500",
-      subtext: `${stats.pendingOrders || 0} pending`,
+      subtext: `${stats.pendingOrders || 0} diproses`,
       trend: stats.orderGrowth,
     },
     {
@@ -123,7 +128,8 @@ const AdminDashboard = () => {
 
   const orderStatusData = [
     { name: 'Selesai', value: stats.completedOrders || 0, color: '#10b981' },
-    { name: 'Pending', value: stats.pendingOrders || 0, color: '#f59e0b' },
+    { name: 'Dikemas', value: stats.packingOrders || 0, color: '#f59e0b' },
+    { name: 'Dikirim', value: stats.shippedOrders || 0, color: '#3b82f6' },
     { name: 'Dibatalkan', value: stats.cancelledOrders || 0, color: '#ef4444' },
   ];
 
@@ -243,10 +249,11 @@ const AdminDashboard = () => {
                   <YAxis stroke="#6b7280" />
                   <Tooltip 
                     contentStyle={{ 
-                      backgroundColor: 'white', 
-                      border: 'none', 
+                      backgroundColor: 'var(--tooltip-bg, white)', 
+                      border: '1px solid var(--tooltip-border, #e5e7eb)', 
                       borderRadius: '8px',
-                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                      color: 'var(--tooltip-text, #1f2937)'
                     }} 
                   />
                   <Legend />
@@ -276,10 +283,11 @@ const AdminDashboard = () => {
                   <Tooltip 
                     formatter={(value) => `Rp ${Number(value).toLocaleString('id-ID', { maximumFractionDigits: 0 })}`}
                     contentStyle={{ 
-                      backgroundColor: 'white', 
-                      border: 'none', 
+                      backgroundColor: 'var(--tooltip-bg, white)', 
+                      border: '1px solid var(--tooltip-border, #e5e7eb)', 
                       borderRadius: '8px',
-                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                      color: 'var(--tooltip-text, #1f2937)'
                     }}
                   />
                   <Legend />
@@ -313,10 +321,11 @@ const AdminDashboard = () => {
                   </Pie>
                   <Tooltip 
                     contentStyle={{ 
-                      backgroundColor: 'white', 
-                      border: 'none', 
+                      backgroundColor: 'var(--tooltip-bg, white)', 
+                      border: '1px solid var(--tooltip-border, #e5e7eb)', 
                       borderRadius: '8px',
-                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                      color: 'var(--tooltip-text, #1f2937)'
                     }}
                   />
                   <Legend />
@@ -338,10 +347,11 @@ const AdminDashboard = () => {
                   <YAxis dataKey="name" type="category" width={100} stroke="#6b7280" />
                   <Tooltip 
                     contentStyle={{ 
-                      backgroundColor: 'white', 
-                      border: 'none', 
+                      backgroundColor: 'var(--tooltip-bg, white)', 
+                      border: '1px solid var(--tooltip-border, #e5e7eb)', 
                       borderRadius: '8px',
-                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                      color: 'var(--tooltip-text, #1f2937)'
                     }}
                   />
                   <Bar dataKey="sold" fill="url(#colorSold)" name="Terjual" radius={[0, 8, 8, 0]} />
@@ -372,10 +382,10 @@ const AdminDashboard = () => {
                 recentOrders.map((order) => (
                   <div
                     key={order.id}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-xl hover:bg-gradient-to-r hover:from-emerald-50 hover:to-green-50 transition-all duration-300 gap-3 hover:shadow-md"
+                    className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gradient-to-r hover:from-emerald-50 hover:to-green-50 dark:hover:from-emerald-900/30 dark:hover:to-green-900/30 transition-all duration-300 gap-3 hover:shadow-md"
                   >
                     <div className="space-y-1 flex-1">
-                      <p className="font-semibold text-[#1E293B]">Order #{order.id}</p>
+                      <p className="font-semibold text-gray-900 dark:text-white">Order #{order.id}</p>
                       <p className="text-sm text-muted-foreground break-words">
                         {order.user.name}
                       </p>

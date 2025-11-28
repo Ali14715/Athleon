@@ -289,6 +289,7 @@ export default function AddressSelector({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation(); // Prevent event bubbling to parent forms (e.g., checkout form)
     
     // Custom validation
     if (!formData.provinsi || !formData.kota || !formData.kecamatan) {

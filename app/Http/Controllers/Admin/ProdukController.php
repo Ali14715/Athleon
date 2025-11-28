@@ -6,12 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\Produk;
 use App\Models\Kategori;
 use App\Models\ProdukVarian;
+use App\Traits\CloudinaryUploadTrait;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
 class ProdukController extends Controller
 {
+    use CloudinaryUploadTrait;
     private function processVariants(Request $request): array
     {
         $raw = $request->input('variants');
@@ -225,6 +227,13 @@ class ProdukController extends Controller
 
     private function storeGalleryFile(UploadedFile $file): ?string
     {
+        // Try to upload to Cloudinary first
+        $cloudinaryUrl = $this->uploadProductImage($file);
+        if ($cloudinaryUrl) {
+            return $cloudinaryUrl;
+        }
+
+        // Fallback to local storage if Cloudinary fails
         $filename = time() . '_' . uniqid('', true) . '.' . $file->getClientOriginalExtension();
         $path = $file->storeAs('produk', $filename, 'public');
 
@@ -262,8 +271,15 @@ class ProdukController extends Controller
         if (!$path) {
             return;
         }
+
+        // Check if it's a Cloudinary URL
+        $service = $this->getCloudinaryService();
+        if ($service->isCloudinaryUrl($path)) {
+            $this->deleteFromCloudinary($path);
+            return;
+        }
         
-        // Handle both /storage/produk/file.jpg and produk/file.jpg formats
+        // Handle local storage - both /storage/produk/file.jpg and produk/file.jpg formats
         $relative = $path;
         if (str_starts_with($path, '/storage/')) {
             $relative = substr($path, strlen('/storage/'));

@@ -545,7 +545,7 @@ class CheckoutController extends Controller
                         'customer_details' => $customerDetails,
                         'enabled_payments' => ['credit_card', 'bca_va', 'bni_va', 'bri_va', 'mandiri_va', 'permata_va', 'gopay', 'shopeepay', 'qris'],
                         'callbacks' => [
-                            'finish' => url('/orders'), // Clean redirect without any parameters
+                            'finish' => url('/payment/callback'),
                         ]
                     ];
 

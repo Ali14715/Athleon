@@ -134,14 +134,26 @@ const AdminOrders = () => {
           },
         });
 
-        const payload = Array.isArray(response.data)
-          ? { data: response.data, pagination: null }
-          : {
-              data: response.data.data || [],
-              pagination: response.data.pagination || null,
-            };
+        // Handle nested API response: { status_code, message, data: { data: [...], pagination: {...} } }
+        let ordersArray: any[] = [];
+        let paginationData: any = null;
 
-        const normalised = payload.data.map((order: any) => ({
+        if (Array.isArray(response.data)) {
+          // Direct array response
+          ordersArray = response.data;
+        } else if (response.data?.data) {
+          // Check if data.data is array or nested object with data array
+          if (Array.isArray(response.data.data)) {
+            ordersArray = response.data.data;
+            paginationData = response.data.pagination;
+          } else if (response.data.data?.data && Array.isArray(response.data.data.data)) {
+            // Nested: data.data.data is the array
+            ordersArray = response.data.data.data;
+            paginationData = response.data.data.pagination || response.data.pagination;
+          }
+        }
+
+        const normalised = ordersArray.map((order: any) => ({
           ...order,
           total: order.total ?? order.total_harga ?? 0,
           itemPesanan: order.itemPesanan ?? order.items ?? [],
@@ -150,12 +162,12 @@ const AdminOrders = () => {
 
         setOrders(normalised);
 
-        if (payload.pagination) {
+        if (paginationData) {
           setPagination({
-            total: payload.pagination.total ?? normalised.length,
-            perPage: payload.pagination.per_page ?? pagination.perPage,
-            currentPage: payload.pagination.current_page ?? pageParam,
-            lastPage: payload.pagination.last_page ?? 1,
+            total: paginationData.total ?? normalised.length,
+            perPage: paginationData.per_page ?? pagination.perPage,
+            currentPage: paginationData.current_page ?? pageParam,
+            lastPage: paginationData.last_page ?? 1,
           });
         } else {
           const totalItems = normalised.length;

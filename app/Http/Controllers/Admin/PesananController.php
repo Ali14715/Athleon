@@ -362,6 +362,11 @@ class PesananController extends Controller
             }
 
             $pesanan->update(['status' => 'Dibatalkan']);
+            
+            // Update payment status to failed (cancelled order)
+            if ($pesanan->pembayaran) {
+                $pesanan->pembayaran->update(['status' => 'failed']);
+            }
 
             return $this->successResponse($pesanan, 'Pesanan dibatalkan');
         } catch (\Exception $e) {

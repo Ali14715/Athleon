@@ -66,21 +66,43 @@ const AdminDashboard = () => {
   const [topProducts, setTopProducts] = useState<ProductSales[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // Filter states for export
-  const [exportFilters, setExportFilters] = useState({
+  // Filter states for dashboard data
+  const [dashboardFilters, setDashboardFilters] = useState({
     startDate: '',
     endDate: '',
     status: 'all'
   });
+  const [showDashboardFilters, setShowDashboardFilters] = useState(false);
+  
+  // Filter states for export (uses same values as dashboard filters)
   const [showExportFilters, setShowExportFilters] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
   }, []);
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (filters?: { startDate: string; endDate: string; status: string }) => {
+    setLoading(true);
     try {
-      const response = await api.get("/api/admin/dashboard");
+      const currentFilters = filters || dashboardFilters;
+      let url = "/api/admin/dashboard";
+      const params = new URLSearchParams();
+      
+      if (currentFilters.startDate) {
+        params.append('start_date', currentFilters.startDate);
+      }
+      if (currentFilters.endDate) {
+        params.append('end_date', currentFilters.endDate);
+      }
+      if (currentFilters.status && currentFilters.status !== 'all') {
+        params.append('status', currentFilters.status);
+      }
+      
+      if (params.toString()) {
+        url += `?${params.toString()}`;
+      }
+      
+      const response = await api.get(url);
       const data = response.data.data || response.data; // Handle nested API response
       setStats(data.stats || {});
       setRecentOrders(data.recentOrders || []);
@@ -93,34 +115,40 @@ const AdminDashboard = () => {
     }
   };
   
+  const applyDashboardFilters = () => {
+    fetchDashboardData(dashboardFilters);
+  };
+  
+  const clearDashboardFilters = () => {
+    const emptyFilters = {
+      startDate: '',
+      endDate: '',
+      status: 'all'
+    };
+    setDashboardFilters(emptyFilters);
+    fetchDashboardData(emptyFilters);
+  };
+  
   const handleExport = (type: 'orders' | 'products' | 'revenue', format: 'pdf' | 'excel') => {
     const token = localStorage.getItem('token');
     const timestamp = new Date().getTime();
     let url = `/api/admin/export/${type}/${format}?timestamp=${timestamp}`;
     
-    // Add filters for orders and revenue exports
+    // Add filters for orders and revenue exports (use dashboard filters)
     if (type === 'orders' || type === 'revenue') {
-      if (exportFilters.startDate) {
-        url += `&start_date=${exportFilters.startDate}`;
+      if (dashboardFilters.startDate) {
+        url += `&start_date=${dashboardFilters.startDate}`;
       }
-      if (exportFilters.endDate) {
-        url += `&end_date=${exportFilters.endDate}`;
+      if (dashboardFilters.endDate) {
+        url += `&end_date=${dashboardFilters.endDate}`;
       }
-      if (exportFilters.status && exportFilters.status !== 'all') {
-        url += `&status=${encodeURIComponent(exportFilters.status)}`;
+      if (dashboardFilters.status && dashboardFilters.status !== 'all') {
+        url += `&status=${encodeURIComponent(dashboardFilters.status)}`;
       }
     }
     
     // Open download in new window
     window.open(`${import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'}${url}&token=${token}`, '_blank');
-  };
-  
-  const clearFilters = () => {
-    setExportFilters({
-      startDate: '',
-      endDate: '',
-      status: 'all'
-    });
   };
 
     const statCards = [
@@ -196,7 +224,7 @@ const AdminDashboard = () => {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <CardTitle className="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
                 <Download className="h-5 w-5" />
-                Export Laporan
+                Export & Filter Laporan
               </CardTitle>
               <Button
                 variant="outline"
@@ -210,35 +238,35 @@ const AdminDashboard = () => {
             </div>
           </CardHeader>
           <CardContent>
-            {/* Export Filters */}
+            {/* Export Filters - using dashboard filters */}
             {showExportFilters && (
               <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
                 <div className="flex flex-col sm:flex-row sm:items-end gap-4">
                   <div className="flex-1 space-y-2">
-                    <Label htmlFor="startDate" className="text-sm font-medium">Tanggal Mulai</Label>
+                    <Label htmlFor="exportStartDate" className="text-sm font-medium">Tanggal Mulai</Label>
                     <Input
-                      id="startDate"
+                      id="exportStartDate"
                       type="date"
-                      value={exportFilters.startDate}
-                      onChange={(e) => setExportFilters(prev => ({ ...prev, startDate: e.target.value }))}
+                      value={dashboardFilters.startDate}
+                      onChange={(e) => setDashboardFilters(prev => ({ ...prev, startDate: e.target.value }))}
                       className="w-full"
                     />
                   </div>
                   <div className="flex-1 space-y-2">
-                    <Label htmlFor="endDate" className="text-sm font-medium">Tanggal Akhir</Label>
+                    <Label htmlFor="exportEndDate" className="text-sm font-medium">Tanggal Akhir</Label>
                     <Input
-                      id="endDate"
+                      id="exportEndDate"
                       type="date"
-                      value={exportFilters.endDate}
-                      onChange={(e) => setExportFilters(prev => ({ ...prev, endDate: e.target.value }))}
+                      value={dashboardFilters.endDate}
+                      onChange={(e) => setDashboardFilters(prev => ({ ...prev, endDate: e.target.value }))}
                       className="w-full"
                     />
                   </div>
                   <div className="flex-1 space-y-2">
-                    <Label htmlFor="status" className="text-sm font-medium">Status Pesanan</Label>
+                    <Label htmlFor="exportStatus" className="text-sm font-medium">Status Pesanan</Label>
                     <Select
-                      value={exportFilters.status}
-                      onValueChange={(value) => setExportFilters(prev => ({ ...prev, status: value }))}
+                      value={dashboardFilters.status}
+                      onValueChange={(value) => setDashboardFilters(prev => ({ ...prev, status: value }))}
                     >
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Semua Status" />
@@ -256,24 +284,32 @@ const AdminDashboard = () => {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={clearFilters}
+                    onClick={clearDashboardFilters}
                     className="flex items-center gap-1 text-gray-500 hover:text-gray-700"
                   >
                     <X className="h-4 w-4" />
                     Reset
                   </Button>
+                  <Button
+                    size="sm"
+                    onClick={applyDashboardFilters}
+                    className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700"
+                  >
+                    <Filter className="h-4 w-4" />
+                    Terapkan ke Dashboard
+                  </Button>
                 </div>
-                {(exportFilters.startDate || exportFilters.endDate || exportFilters.status !== 'all') && (
+                {(dashboardFilters.startDate || dashboardFilters.endDate || dashboardFilters.status !== 'all') && (
                   <div className="mt-3 flex flex-wrap gap-2">
                     <span className="text-xs text-gray-500">Filter aktif:</span>
-                    {exportFilters.startDate && (
-                      <Badge variant="secondary" className="text-xs">Dari: {exportFilters.startDate}</Badge>
+                    {dashboardFilters.startDate && (
+                      <Badge variant="secondary" className="text-xs">Dari: {dashboardFilters.startDate}</Badge>
                     )}
-                    {exportFilters.endDate && (
-                      <Badge variant="secondary" className="text-xs">Sampai: {exportFilters.endDate}</Badge>
+                    {dashboardFilters.endDate && (
+                      <Badge variant="secondary" className="text-xs">Sampai: {dashboardFilters.endDate}</Badge>
                     )}
-                    {exportFilters.status !== 'all' && (
-                      <Badge variant="secondary" className="text-xs">Status: {exportFilters.status}</Badge>
+                    {dashboardFilters.status !== 'all' && (
+                      <Badge variant="secondary" className="text-xs">Status: {dashboardFilters.status}</Badge>
                     )}
                   </div>
                 )}

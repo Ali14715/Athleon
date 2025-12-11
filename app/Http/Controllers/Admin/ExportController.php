@@ -66,7 +66,11 @@ class ExportController extends Controller
      */
     public function productsPdf(Request $request)
     {
-        $products = Produk::with(['kategori', 'varians'])->get();
+        // Eager load kategori dan varians untuk memastikan relasi terload
+        $products = Produk::with(['kategori', 'varians'])
+            ->orderBy('idKategori')
+            ->orderBy('nama')
+            ->get();
         
         $pdf = Pdf::loadView('exports.products-pdf', [
             'products' => $products

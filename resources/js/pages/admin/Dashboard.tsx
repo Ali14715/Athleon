@@ -1,9 +1,13 @@
 import { useState, useEffect } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Package, ShoppingCart, Users, DollarSign, Loader2, TrendingUp, TrendingDown, FileText, Download } from "lucide-react";
+import { Package, ShoppingCart, Users, DollarSign, Loader2, TrendingUp, TrendingDown, FileText, Download, Calendar, Filter, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import api from "@/lib/api";
 
@@ -61,6 +65,14 @@ const AdminDashboard = () => {
   const [salesData, setSalesData] = useState<SalesData[]>([]);
   const [topProducts, setTopProducts] = useState<ProductSales[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Filter states for export
+  const [exportFilters, setExportFilters] = useState({
+    startDate: '',
+    endDate: '',
+    status: 'all'
+  });
+  const [showExportFilters, setShowExportFilters] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
@@ -84,10 +96,31 @@ const AdminDashboard = () => {
   const handleExport = (type: 'orders' | 'products' | 'revenue', format: 'pdf' | 'excel') => {
     const token = localStorage.getItem('token');
     const timestamp = new Date().getTime();
-    const url = `/api/admin/export/${type}/${format}?timestamp=${timestamp}`;
+    let url = `/api/admin/export/${type}/${format}?timestamp=${timestamp}`;
+    
+    // Add filters for orders and revenue exports
+    if (type === 'orders' || type === 'revenue') {
+      if (exportFilters.startDate) {
+        url += `&start_date=${exportFilters.startDate}`;
+      }
+      if (exportFilters.endDate) {
+        url += `&end_date=${exportFilters.endDate}`;
+      }
+      if (exportFilters.status && exportFilters.status !== 'all') {
+        url += `&status=${encodeURIComponent(exportFilters.status)}`;
+      }
+    }
     
     // Open download in new window
     window.open(`${import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'}${url}&token=${token}`, '_blank');
+  };
+  
+  const clearFilters = () => {
+    setExportFilters({
+      startDate: '',
+      endDate: '',
+      status: 'all'
+    });
   };
 
     const statCards = [
@@ -160,47 +193,142 @@ const AdminDashboard = () => {
         {/* Export Buttons */}
         <Card className="border-0 shadow-lg">
           <CardHeader>
-            <CardTitle className="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
-              <Download className="h-5 w-5" />
-              Export Laporan
-            </CardTitle>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <CardTitle className="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                <Download className="h-5 w-5" />
+                Export Laporan
+              </CardTitle>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowExportFilters(!showExportFilters)}
+                className="flex items-center gap-2"
+              >
+                <Filter className="h-4 w-4" />
+                {showExportFilters ? 'Sembunyikan Filter' : 'Tampilkan Filter'}
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-3 md:grid-cols-3">
-              <div className="space-y-2">
-                <p className="text-sm font-medium">Laporan Pesanan</p>
+            {/* Export Filters */}
+            {showExportFilters && (
+              <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                <div className="flex flex-col sm:flex-row sm:items-end gap-4">
+                  <div className="flex-1 space-y-2">
+                    <Label htmlFor="startDate" className="text-sm font-medium">Tanggal Mulai</Label>
+                    <Input
+                      id="startDate"
+                      type="date"
+                      value={exportFilters.startDate}
+                      onChange={(e) => setExportFilters(prev => ({ ...prev, startDate: e.target.value }))}
+                      className="w-full"
+                    />
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <Label htmlFor="endDate" className="text-sm font-medium">Tanggal Akhir</Label>
+                    <Input
+                      id="endDate"
+                      type="date"
+                      value={exportFilters.endDate}
+                      onChange={(e) => setExportFilters(prev => ({ ...prev, endDate: e.target.value }))}
+                      className="w-full"
+                    />
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <Label htmlFor="status" className="text-sm font-medium">Status Pesanan</Label>
+                    <Select
+                      value={exportFilters.status}
+                      onValueChange={(value) => setExportFilters(prev => ({ ...prev, status: value }))}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Semua Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Semua Status</SelectItem>
+                        <SelectItem value="Belum Dibayar">Belum Dibayar</SelectItem>
+                        <SelectItem value="Dikemas">Dikemas</SelectItem>
+                        <SelectItem value="Dikirim">Dikirim</SelectItem>
+                        <SelectItem value="Selesai">Selesai</SelectItem>
+                        <SelectItem value="Dibatalkan">Dibatalkan</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearFilters}
+                    className="flex items-center gap-1 text-gray-500 hover:text-gray-700"
+                  >
+                    <X className="h-4 w-4" />
+                    Reset
+                  </Button>
+                </div>
+                {(exportFilters.startDate || exportFilters.endDate || exportFilters.status !== 'all') && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <span className="text-xs text-gray-500">Filter aktif:</span>
+                    {exportFilters.startDate && (
+                      <Badge variant="secondary" className="text-xs">Dari: {exportFilters.startDate}</Badge>
+                    )}
+                    {exportFilters.endDate && (
+                      <Badge variant="secondary" className="text-xs">Sampai: {exportFilters.endDate}</Badge>
+                    )}
+                    {exportFilters.status !== 'all' && (
+                      <Badge variant="secondary" className="text-xs">Status: {exportFilters.status}</Badge>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+            
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-xl border border-blue-200 dark:border-blue-800">
+                <div className="flex items-center gap-2 mb-3">
+                  <ShoppingCart className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  <p className="text-sm font-semibold text-blue-800 dark:text-blue-300">Laporan Pesanan</p>
+                </div>
+                <p className="text-xs text-blue-600 dark:text-blue-400 mb-3">Export data pesanan dengan filter yang dipilih</p>
                 <div className="flex gap-2">
-                  <Button size="sm" variant="outline" onClick={() => handleExport('orders', 'pdf')} className="flex-1">
+                  <Button size="sm" onClick={() => handleExport('orders', 'pdf')} className="flex-1 bg-blue-600 hover:bg-blue-700">
                     <FileText className="h-4 w-4 mr-1" />
                     PDF
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => handleExport('orders', 'excel')} className="flex-1">
+                  <Button size="sm" onClick={() => handleExport('orders', 'excel')} className="flex-1 bg-blue-600 hover:bg-blue-700">
                     <FileText className="h-4 w-4 mr-1" />
                     Excel
                   </Button>
                 </div>
               </div>
-              <div className="space-y-2">
-                <p className="text-sm font-medium">Laporan Produk</p>
+              
+              <div className="p-4 bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 rounded-xl border border-emerald-200 dark:border-emerald-800">
+                <div className="flex items-center gap-2 mb-3">
+                  <Package className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                  <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">Laporan Produk</p>
+                </div>
+                <p className="text-xs text-emerald-600 dark:text-emerald-400 mb-3">Export semua data produk dan kategori</p>
                 <div className="flex gap-2">
-                  <Button size="sm" variant="outline" onClick={() => handleExport('products', 'pdf')} className="flex-1">
+                  <Button size="sm" onClick={() => handleExport('products', 'pdf')} className="flex-1 bg-emerald-600 hover:bg-emerald-700">
                     <FileText className="h-4 w-4 mr-1" />
                     PDF
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => handleExport('products', 'excel')} className="flex-1">
+                  <Button size="sm" onClick={() => handleExport('products', 'excel')} className="flex-1 bg-emerald-600 hover:bg-emerald-700">
                     <FileText className="h-4 w-4 mr-1" />
                     Excel
                   </Button>
                 </div>
               </div>
-              <div className="space-y-2">
-                <p className="text-sm font-medium">Laporan Pendapatan</p>
+              
+              <div className="p-4 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-xl border border-purple-200 dark:border-purple-800">
+                <div className="flex items-center gap-2 mb-3">
+                  <DollarSign className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                  <p className="text-sm font-semibold text-purple-800 dark:text-purple-300">Laporan Pendapatan</p>
+                </div>
+                <p className="text-xs text-purple-600 dark:text-purple-400 mb-3">Export laporan pendapatan dengan filter</p>
                 <div className="flex gap-2">
-                  <Button size="sm" variant="outline" onClick={() => handleExport('revenue', 'pdf')} className="flex-1">
+                  <Button size="sm" onClick={() => handleExport('revenue', 'pdf')} className="flex-1 bg-purple-600 hover:bg-purple-700">
                     <FileText className="h-4 w-4 mr-1" />
                     PDF
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => handleExport('revenue', 'excel')} className="flex-1">
+                  <Button size="sm" onClick={() => handleExport('revenue', 'excel')} className="flex-1 bg-purple-600 hover:bg-purple-700">
                     <FileText className="h-4 w-4 mr-1" />
                     Excel
                   </Button>

@@ -352,6 +352,20 @@ class CheckoutController extends Controller
                     return $this->notFoundResponse('Produk tidak ditemukan');
                 }
                 
+                // ===========================================
+                // SECURITY VALIDATION: Cek status produk aktif
+                // ===========================================
+                if (isset($produk->is_active) && !$produk->is_active) {
+                    return $this->badRequestResponse('Produk tidak tersedia untuk dibeli');
+                }
+                
+                // ===========================================
+                // SECURITY VALIDATION: Cek stok produk
+                // ===========================================
+                if ($produk->stok > 0 && $request->jumlah > $produk->stok) {
+                    return $this->badRequestResponse('Stok produk tidak mencukupi. Stok tersedia: ' . $produk->stok);
+                }
+                
                 // Create a virtual cart item for buy-now
                 $item = new \stdClass();
                 $item->produk_id = $produk->id;
@@ -362,7 +376,23 @@ class CheckoutController extends Controller
                 
                 // Load variants if provided
                 if ($request->has('varian_ids') && is_array($request->varian_ids)) {
-                    $item->varians = \App\Models\ProdukVarian::whereIn('id', $request->varian_ids)->get();
+                    $varians = \App\Models\ProdukVarian::whereIn('id', $request->varian_ids)
+                        ->where('produk_id', $produk->id) // SECURITY: Pastikan varian milik produk ini
+                        ->get();
+                    
+                    // SECURITY VALIDATION: Cek semua varian ditemukan
+                    if ($varians->count() !== count($request->varian_ids)) {
+                        return $this->badRequestResponse('Satu atau lebih varian tidak valid untuk produk ini');
+                    }
+                    
+                    // SECURITY VALIDATION: Cek stok varian
+                    foreach ($varians as $v) {
+                        if ($v->stok > 0 && $request->jumlah > $v->stok) {
+                            return $this->badRequestResponse("Stok varian {$v->nilai_varian} tidak mencukupi. Stok tersedia: {$v->stok}");
+                        }
+                    }
+                    
+                    $item->varians = $varians;
                 }
                 
                 $cartItems = collect([$item]);
@@ -404,23 +434,83 @@ class CheckoutController extends Controller
                 if ($cartItems->isEmpty()) {
                     return $this->badRequestResponse('Tidak ada item yang dipilih');
                 }
+                
+                // ===========================================
+                // SECURITY VALIDATION: Validasi setiap item di cart
+                // ===========================================
+                foreach ($cartItems as $item) {
+                    $produk = $item->produk;
+                    
+                    // Cek produk masih ada dan aktif
+                    if (!$produk) {
+                        return $this->badRequestResponse('Salah satu produk di keranjang tidak tersedia');
+                    }
+                    
+                    if (isset($produk->is_active) && !$produk->is_active) {
+                        return $this->badRequestResponse("Produk '{$produk->nama}' tidak tersedia untuk dibeli");
+                    }
+                    
+                    // Re-fetch produk untuk mendapatkan harga terbaru dari database
+                    $freshProduk = \App\Models\Produk::find($produk->id);
+                    if (!$freshProduk) {
+                        return $this->badRequestResponse("Produk '{$produk->nama}' tidak ditemukan");
+                    }
+                    
+                    // Update dengan data fresh
+                    $item->produk = $freshProduk;
+                    
+                    // Cek stok produk
+                    if ($freshProduk->stok > 0 && $item->jumlah > $freshProduk->stok) {
+                        return $this->badRequestResponse("Stok produk '{$freshProduk->nama}' tidak mencukupi. Stok tersedia: {$freshProduk->stok}");
+                    }
+                    
+                    // Validasi stok varian
+                    if (isset($item->varians) && is_object($item->varians) && $item->varians->count() > 0) {
+                        foreach ($item->varians as $v) {
+                            // Re-fetch varian untuk data terbaru
+                            $freshVarian = \App\Models\ProdukVarian::find($v->id);
+                            if (!$freshVarian) {
+                                return $this->badRequestResponse("Varian produk tidak valid");
+                            }
+                            
+                            if ($freshVarian->stok > 0 && $item->jumlah > $freshVarian->stok) {
+                                return $this->badRequestResponse("Stok varian {$freshVarian->nilai_varian} untuk '{$freshProduk->nama}' tidak mencukupi. Stok tersedia: {$freshVarian->stok}");
+                            }
+                        }
+                    }
+                }
             }
             
-            // Calculate totals
+            // ===========================================
+            // Calculate totals - SELALU dari database, bukan dari request
+            // ===========================================
             $subtotal = 0;
             $orderItems = [];
             
             foreach ($cartItems as $item) {
-                $basePrice = $item->produk->harga ?? 0;
+                // SECURITY: Ambil harga LANGSUNG dari database, bukan dari request/cache
+                $freshProduk = \App\Models\Produk::find($item->produk_id);
+                if (!$freshProduk) {
+                    return $this->badRequestResponse('Produk tidak ditemukan');
+                }
+                
+                $basePrice = $freshProduk->harga ?? 0;
                 $unitPrice = $basePrice;
                 
-                // Add variant prices
+                // Add variant prices - DARI DATABASE
                 if (isset($item->varians) && is_object($item->varians) && $item->varians->count() > 0) {
                     foreach ($item->varians as $v) {
-                        $unitPrice += $v->harga_tambahan ?? 0;
+                        // Re-fetch untuk harga terbaru
+                        $freshVarian = \App\Models\ProdukVarian::find($v->id);
+                        if ($freshVarian) {
+                            $unitPrice += $freshVarian->harga_tambahan ?? 0;
+                        }
                     }
-                } elseif (isset($item->varian) && $item->varian && isset($item->varian->harga_tambahan) && $item->varian->harga_tambahan) {
-                    $unitPrice += $item->varian->harga_tambahan;
+                } elseif (isset($item->varian) && $item->varian && isset($item->varian->id)) {
+                    $freshVarian = \App\Models\ProdukVarian::find($item->varian->id);
+                    if ($freshVarian && $freshVarian->harga_tambahan) {
+                        $unitPrice += $freshVarian->harga_tambahan;
+                    }
                 }
                 
                 $itemSubtotal = $unitPrice * $item->jumlah;
@@ -428,14 +518,30 @@ class CheckoutController extends Controller
                 
                 $orderItems[] = [
                     'id' => $item->produk_id,
-                    'name' => $item->produk->nama,
+                    'name' => $freshProduk->nama,
                     'price' => $unitPrice,
                     'quantity' => $item->jumlah,
                 ];
+                
+                // Update item dengan fresh data untuk digunakan saat create order items
+                $item->produk = $freshProduk;
             }
 
+            // SECURITY: Validasi shipping cost tidak negatif dan tidak terlalu besar
             $shippingCost = (float) $request->input('shipping_cost', 0);
+            if ($shippingCost < 0) {
+                return $this->badRequestResponse('Biaya pengiriman tidak valid');
+            }
+            if ($shippingCost > 1000000) { // Max 1 juta untuk ongkir
+                return $this->badRequestResponse('Biaya pengiriman melebihi batas maksimum');
+            }
+            
             $total = $subtotal + $shippingCost;
+            
+            // SECURITY: Validasi total harus positif
+            if ($total <= 0) {
+                return $this->badRequestResponse('Total pesanan tidak valid');
+            }
             
             // Determine initial status based on payment method
             $initialStatus = 'Belum Dibayar';
@@ -459,24 +565,36 @@ class CheckoutController extends Controller
                 'nomor_telepon' => $request->nomor_telepon,
             ]);
             
-            // Create order items
+            // Create order items - SELALU ambil harga dari database
             foreach ($cartItems as $item) {
-                // Calculate unit price with variant adjustments
-                $basePrice = $item->produk->harga ?? 0;
+                // SECURITY: Re-fetch untuk memastikan harga terbaru
+                $freshProduk = \App\Models\Produk::find($item->produk_id);
+                if (!$freshProduk) {
+                    DB::rollBack();
+                    return $this->badRequestResponse('Produk tidak ditemukan saat membuat pesanan');
+                }
+                
+                $basePrice = $freshProduk->harga ?? 0;
                 $unitPrice = $basePrice;
                 $varianLabel = null;
                 
-                // Build variant label and calculate price
+                // Build variant label and calculate price - DARI DATABASE
                 if (isset($item->varians) && is_object($item->varians) && $item->varians->count() > 0) {
                     $varianLabels = [];
                     foreach ($item->varians as $v) {
-                        $unitPrice += $v->harga_tambahan ?? 0;
-                        $varianLabels[] = $v->nama_varian . ': ' . $v->nilai_varian;
+                        $freshVarian = \App\Models\ProdukVarian::find($v->id);
+                        if ($freshVarian) {
+                            $unitPrice += $freshVarian->harga_tambahan ?? 0;
+                            $varianLabels[] = $freshVarian->nama_varian . ': ' . $freshVarian->nilai_varian;
+                        }
                     }
                     $varianLabel = implode(', ', $varianLabels);
-                } elseif (isset($item->varian) && $item->varian && isset($item->varian->nama_varian)) {
-                    $unitPrice += $item->varian->harga_tambahan ?? 0;
-                    $varianLabel = $item->varian_label ?? ($item->varian->nama_varian . ': ' . $item->varian->nilai_varian);
+                } elseif (isset($item->varian) && $item->varian && isset($item->varian->id)) {
+                    $freshVarian = \App\Models\ProdukVarian::find($item->varian->id);
+                    if ($freshVarian) {
+                        $unitPrice += $freshVarian->harga_tambahan ?? 0;
+                        $varianLabel = $item->varian_label ?? ($freshVarian->nama_varian . ': ' . $freshVarian->nilai_varian);
+                    }
                 }
                 
                 ItemPesanan::create([

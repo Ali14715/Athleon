@@ -27,7 +27,7 @@ class ProdukSeeder extends Seeder
                 'harga' => 1000.00,
                 'stok' => 50,
                 'ukuran' => '38,39,40,41,42,43,44',
-                'gambar' => $placeholder,
+                'gambar' => 'https://res.cloudinary.com/dalw9amtm/image/upload/v1764769271/athleon/products/b6prwhlydfcra9zxta7f.jpg',
                 'galeri' => json_encode([$placeholder, $placeholder]),
             ],
             [
@@ -39,7 +39,7 @@ class ProdukSeeder extends Seeder
                 'harga' => 1000.00,
                 'stok' => 30,
                 'ukuran' => '40,41,42,43,44,45',
-                'gambar' => $placeholder,
+                'gambar' => 'https://res.cloudinary.com/dalw9amtm/image/upload/v1764769418/athleon/products/xkm0qz2kzuhu70imnvnb.jpg',
                 'galeri' => json_encode([$placeholder, $placeholder]),
             ],
             [
@@ -51,7 +51,7 @@ class ProdukSeeder extends Seeder
                 'harga' => 1000.00,
                 'stok' => 40,
                 'ukuran' => '36,37,38,39,40,41',
-                'gambar' => $placeholder,
+                'gambar' => 'https://res.cloudinary.com/dalw9amtm/image/upload/v1764769315/athleon/products/xm0qz8e5lhqh0zju4qpm.jpg',
                 'galeri' => json_encode([$placeholder, $placeholder]),
             ],
 
@@ -65,7 +65,7 @@ class ProdukSeeder extends Seeder
                 'harga' => 1000.00,
                 'stok' => 100,
                 'ukuran' => 'S,M,L,XL,XXL',
-                'gambar' => $placeholder,
+                'gambar' => 'https://res.cloudinary.com/dalw9amtm/image/upload/v1764769456/athleon/products/deaigpcaerxgrnrgotxh.jpg',
                 'galeri' => json_encode([$placeholder, $placeholder]),
             ],
             [
@@ -77,7 +77,7 @@ class ProdukSeeder extends Seeder
                 'harga' => 1000.00,
                 'stok' => 80,
                 'ukuran' => 'S,M,L,XL',
-                'gambar' => $placeholder,
+                'gambar' => 'https://res.cloudinary.com/dalw9amtm/image/upload/v1764769471/athleon/products/w0yqj92xml3vavyuo8f3.jpg',
                 'galeri' => json_encode([$placeholder, $placeholder]),
             ],
             [
@@ -89,7 +89,7 @@ class ProdukSeeder extends Seeder
                 'harga' => 1000.00,
                 'stok' => 60,
                 'ukuran' => 'S,M,L,XL,XXL',
-                'gambar' => $placeholder,
+                'gambar' => 'https://res.cloudinary.com/dalw9amtm/image/upload/v1764769495/athleon/products/qdraumznhjgeem9edfnv.jpg',
                 'galeri' => json_encode([$placeholder, $placeholder]),
             ],
             [
@@ -101,7 +101,7 @@ class ProdukSeeder extends Seeder
                 'harga' => 1000.00,
                 'stok' => 45,
                 'ukuran' => 'M,L,XL,XXL',
-                'gambar' => $placeholder,
+                'gambar' => 'https://res.cloudinary.com/dalw9amtm/image/upload/v1764769566/athleon/products/ir20qgrf8o7vzpfn8bdb.jpg',
                 'galeri' => json_encode([$placeholder, $placeholder]),
             ],
 
@@ -115,7 +115,7 @@ class ProdukSeeder extends Seeder
                 'harga' => 1000.00,
                 'stok' => 200,
                 'ukuran' => 'Free Size',
-                'gambar' => $placeholder,
+                'gambar' => 'https://res.cloudinary.com/dalw9amtm/image/upload/v1764769579/athleon/products/hbhr831ndfzjuodtiimp.jpg',
                 'galeri' => json_encode([$placeholder]),
             ],
             [
@@ -127,7 +127,7 @@ class ProdukSeeder extends Seeder
                 'harga' => 1000.00,
                 'stok' => 75,
                 'ukuran' => 'Free Size',
-                'gambar' => $placeholder,
+                'gambar' => 'https://res.cloudinary.com/dalw9amtm/image/upload/v1764769590/athleon/products/fg2gsczvqiw8bqakhxw7.jpg',
                 'galeri' => json_encode([$placeholder, $placeholder]),
             ],
             [
@@ -139,7 +139,7 @@ class ProdukSeeder extends Seeder
                 'harga' => 1000.00,
                 'stok' => 90,
                 'ukuran' => 'S,M,L,XL',
-                'gambar' => $placeholder,
+                'gambar' => 'https://res.cloudinary.com/dalw9amtm/image/upload/v1764769601/athleon/products/jdr8uzj0h3ykffoove1e.jpg',
                 'galeri' => json_encode([$placeholder]),
             ],
 
@@ -153,7 +153,7 @@ class ProdukSeeder extends Seeder
                 'harga' => 1000.00,
                 'stok' => 35,
                 'ukuran' => 'Large',
-                'gambar' => $placeholder,
+                'gambar' => 'https://res.cloudinary.com/dalw9amtm/image/upload/v1764769614/athleon/products/qvhueyljailkys1dcfgo.jpg',
                 'galeri' => json_encode([$placeholder, $placeholder]),
             ],
             [
@@ -165,7 +165,7 @@ class ProdukSeeder extends Seeder
                 'harga' => 1000.00,
                 'stok' => 50,
                 'ukuran' => 'Medium',
-                'gambar' => $placeholder,
+                'gambar' => 'https://res.cloudinary.com/dalw9amtm/image/upload/v1764769914/athleon/products/msei6m5rcameyk3xufz4.jpg',
                 'galeri' => json_encode([$placeholder, $placeholder]),
             ],
 
@@ -179,7 +179,7 @@ class ProdukSeeder extends Seeder
                 'harga' => 1000.00,
                 'stok' => 25,
                 'ukuran' => '5kg',
-                'gambar' => $placeholder,
+                'gambar' => 'https://res.cloudinary.com/dalw9amtm/image/upload/v1764769893/athleon/products/abqcxzqqjvzdmyrzyujf.jpg',
                 'galeri' => json_encode([$placeholder]),
             ],
             [
@@ -191,7 +191,7 @@ class ProdukSeeder extends Seeder
                 'harga' => 1000.00,
                 'stok' => 40,
                 'ukuran' => '180x60cm',
-                'gambar' => $placeholder,
+                'gambar' => 'https://res.cloudinary.com/dalw9amtm/image/upload/v1764770065/athleon/products/hqvz8lma8okpndwogctf.jpg',
                 'galeri' => json_encode([$placeholder, $placeholder]),
             ],
             [
@@ -203,7 +203,7 @@ class ProdukSeeder extends Seeder
                 'harga' => 1000.00,
                 'stok' => 60,
                 'ukuran' => 'Set',
-                'gambar' => $placeholder,
+                'gambar' => 'https://res.cloudinary.com/dalw9amtm/image/upload/v1764770002/athleon/products/lqwixewafazkq5ztovpn.jpg',
                 'galeri' => json_encode([$placeholder]),
             ],
         ];

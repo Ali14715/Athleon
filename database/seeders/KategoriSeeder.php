@@ -20,27 +20,27 @@ class KategoriSeeder extends Seeder
             [
                 'nama' => 'Sepatu Olahraga',
                 'deskripsi' => 'Koleksi sepatu olahraga untuk berbagai aktivitas',
-                'gambar' => $placeholder,
+                'gambar' => 'https://res.cloudinary.com/dalw9amtm/image/upload/v1765345530/athleon/categories/zpbpvl0joqbc1xpupi7y.jpg',
             ],
             [
                 'nama' => 'Pakaian Olahraga',
                 'deskripsi' => 'Pakaian olahraga nyaman dan berkualitas',
-                'gambar' => $placeholder,
+                'gambar' => 'https://res.cloudinary.com/dalw9amtm/image/upload/v1765345542/athleon/categories/tclqrribk2a4af0kbnvi.jpg',
             ],
             [
                 'nama' => 'Aksesoris',
                 'deskripsi' => 'Aksesoris pelengkap aktivitas olahraga',
-                'gambar' => $placeholder,
+                'gambar' => 'https://res.cloudinary.com/dalw9amtm/image/upload/v1765345557/athleon/categories/psty1fpzv5za5dosg0bj.jpg',
             ],
             [
                 'nama' => 'Tas Olahraga',
                 'deskripsi' => 'Tas untuk membawa perlengkapan olahraga',
-                'gambar' => $placeholder,
+                'gambar' => 'https://res.cloudinary.com/dalw9amtm/image/upload/v1765345568/athleon/categories/dtlxebhw428fhdd1l9w2.png',
             ],
             [
                 'nama' => 'Alat Fitness',
                 'deskripsi' => 'Peralatan untuk latihan dan fitness',
-                'gambar' => $placeholder,
+                'gambar' => 'https://res.cloudinary.com/dalw9amtm/image/upload/v1765345581/athleon/categories/h2hwoxawodxq3ka8fyxb.jpg',
             ],
         ];
 

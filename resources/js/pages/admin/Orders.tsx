@@ -615,7 +615,7 @@ const AdminOrders = () => {
                     </SelectTrigger>
                     <SelectContent className="bg-popover">
                       <SelectItem value="Belum Dibayar">Belum Dibayar</SelectItem>
-                      <SelectItem value="Sudah Dibayar">Sudah Dibayar</SelectItem>
+                      
                       <SelectItem value="Dikemas">Dikemas</SelectItem>
                       <SelectItem value="Dikirim">Dikirim</SelectItem>
                       <SelectItem value="Selesai">Selesai</SelectItem>

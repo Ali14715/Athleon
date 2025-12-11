@@ -20,7 +20,7 @@ class BannerSeeder extends Seeder
             [
                 'title' => 'Koleksi Sepatu Terbaru',
                 'description' => 'Dapatkan sepatu olahraga terbaru dengan diskon hingga 50%',
-                'image_url' => $placeholder,
+                'image_url' => 'https://res.cloudinary.com/dalw9amtm/image/upload/v1765345696/athleon/banners/xrf4xmlbpcefst5vv1dw.jpg',
                 'link_url' => 'http://127.0.0.1:8000/catalog',
                 'button_text' => 'Belanja Sekarang',
                 'is_active' => true,
@@ -29,7 +29,7 @@ class BannerSeeder extends Seeder
             [
                 'title' => 'Pakaian Olahraga Premium',
                 'description' => 'Koleksi pakaian olahraga berkualitas tinggi',
-                'image_url' => $placeholder,
+                'image_url' => 'https://res.cloudinary.com/dalw9amtm/image/upload/v1765345721/athleon/banners/z4tdbmv3jzy5lk65qqpu.jpg',
                 'link_url' => 'http://127.0.0.1:8000/catalog',
                 'button_text' => 'Lihat Koleksi',
                 'is_active' => true,
@@ -38,7 +38,7 @@ class BannerSeeder extends Seeder
             [
                 'title' => 'Perlengkapan Fitness',
                 'description' => 'Lengkapi home gym Anda dengan alat fitness terbaik',
-                'image_url' => $placeholder,
+                'image_url' => 'https://res.cloudinary.com/dalw9amtm/image/upload/v1765345792/athleon/banners/mcrefr3ihozwssog0sgg.jpg',
                 'link_url' => 'http://127.0.0.1:8000/catalog',
                 'button_text' => 'Explore',
                 'is_active' => true,

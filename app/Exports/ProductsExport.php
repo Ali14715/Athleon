@@ -37,14 +37,11 @@ class ProductsExport implements FromCollection, WithHeadings, WithMapping, WithS
     
     public function map($product): array
     {
-        // Pastikan kategori diambil dengan benar
+        // Ambil kategori langsung dari database karena ada konflik nama field 'kategori' dengan relasi
         $kategoriNama = '-';
-        if ($product->kategori && $product->kategori->nama) {
-            $kategoriNama = $product->kategori->nama;
-        } elseif ($product->idKategori) {
-            // Fallback: coba ambil langsung dari database jika relasi gagal
+        if ($product->idKategori) {
             $kategori = \App\Models\Kategori::find($product->idKategori);
-            $kategoriNama = $kategori ? $kategori->nama : 'ID: ' . $product->idKategori;
+            $kategoriNama = $kategori ? $kategori->nama : '-';
         }
         
         return [

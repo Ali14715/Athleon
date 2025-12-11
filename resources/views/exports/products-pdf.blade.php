@@ -47,10 +47,17 @@
         </thead>
         <tbody>
             @foreach($products as $product)
+            @php
+                $kategoriNama = '-';
+                if ($product->idKategori) {
+                    $kat = \App\Models\Kategori::find($product->idKategori);
+                    $kategoriNama = $kat ? $kat->nama : '-';
+                }
+            @endphp
             <tr>
                 <td>{{ $product->id }}</td>
                 <td>{{ $product->nama }}</td>
-                <td>{{ $product->kategori->nama ?? ($product->idKategori ? 'ID: ' . $product->idKategori : '-') }}</td>
+                <td>{{ $kategoriNama }}</td>
                 <td>{{ $product->jenisKelamin ?? '-' }}</td>
                 <td>Rp {{ number_format($product->harga, 0, ',', '.') }}</td>
                 <td>{{ $product->stok }}</td>

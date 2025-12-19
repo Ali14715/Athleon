@@ -1,0 +1,3377 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Athleon API",
+    "version": "2.0.0",
+    "description": "Comprehensive API Documentation for Athleon E-Commerce. \n\n**Authentication**: Bearer Token (JWT).\n**Base URL**: `/api`\n\n**Standard Response Format (v2.0)**:\n```json\n{\n  \"status_code\": 200,\n  \"message\": \"Success message\",\n  \"data\": { ... }\n}\n```\n\n**Postman Variables**:\n- `{{BASE_URL}}`: http://localhost:8000/api\n- `{{bearerAuth}}`: Your JWT token from login response"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000/api",
+      "description": "Local Development"
+    },
+    {
+      "url": "https://api.athleon.com/api",
+      "description": "Production"
+    }
+  ],
+  "x-postman-variables": [
+    {
+      "key": "BASE_URL",
+      "value": "http://localhost:8000/api",
+      "type": "default",
+      "description": "Base API URL"
+    },
+    {
+      "key": "bearerToken",
+      "value": "",
+      "type": "secret",
+      "description": "JWT Bearer Token from login response. Set this after successful login."
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "StandardResponse": {
+        "type": "object",
+        "properties": {
+          "status_code": { "type": "integer", "example": 200 },
+          "message": { "type": "string", "example": "Operation successful" },
+          "data": { "type": "object", "description": "Response data payload" }
+        },
+        "required": ["status_code", "message"]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "status_code": { "type": "integer", "example": 400 },
+          "message": { "type": "string", "example": "Error message" },
+          "data": { "type": "object", "nullable": true }
+        }
+      },
+      "ValidationErrorResponse": {
+        "type": "object",
+        "properties": {
+          "status_code": { "type": "integer", "example": 422 },
+          "message": { "type": "string", "example": "Validation error" },
+          "data": {
+            "type": "object",
+            "properties": {
+              "errors": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "name": { "type": "string", "example": "John Doe" },
+          "email": { "type": "string", "format": "email", "example": "john@example.com" },
+          "telepon": { "type": "string", "example": "081234567890" },
+          "role": { "type": "string", "enum": ["admin", "customer"], "example": "customer" },
+          "jenis_kelamin": { "type": "string", "enum": ["L", "P"], "example": "L" }
+        }
+      },
+      "Product": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 101 },
+          "nama": { "type": "string", "example": "Athleon Running Jersey" },
+          "slug": { "type": "string", "example": "athleon-running-jersey" },
+          "harga": { "type": "number", "example": 150000 },
+          "stok": { "type": "integer", "example": 50 },
+          "deskripsi": { "type": "string", "example": "High quality running jersey." },
+          "gambar_url": { "type": "string", "example": "https://api.athleon.com/storage/produk/jersey.jpg" },
+          "kategori": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "integer", "example": 5 },
+              "nama": { "type": "string", "example": "Pakaian Pria" }
+            }
+          },
+          "varians": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "integer", "example": 12 },
+                "nama_varian": { "type": "string", "example": "Ukuran" },
+                "nilai_varian": { "type": "string", "example": "L" },
+                "stok": { "type": "integer", "example": 10 }
+              }
+            }
+          }
+        }
+      },
+      "CartItem": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 55 },
+          "produk": { "$ref": "#/components/schemas/Product" },
+          "jumlah": { "type": "integer", "example": 2 },
+          "subtotal": { "type": "number", "example": 300000 },
+          "varian_label": { "type": "string", "example": "Ukuran: L, Warna: Hitam" }
+        }
+      },
+      "Address": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 10 },
+          "label": { "type": "string", "example": "Rumah" },
+          "nama_penerima": { "type": "string", "example": "John Doe" },
+          "telepon_penerima": { "type": "string", "example": "08123456789" },
+          "alamat_lengkap": { "type": "string", "example": "Jl. Sudirman No. 1" },
+          "kota": { "type": "string", "example": "Jakarta Selatan" },
+          "kode_pos": { "type": "string", "example": "12190" },
+          "area_id": { "type": "string", "description": "Biteship Area ID", "example": "IDNP6ID100001" }
+        }
+      },
+      "Order": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 2024001 },
+          "status": { "type": "string", "example": "Menunggu Pembayaran" },
+          "total_harga": { "type": "number", "example": 350000 },
+          "ongkir": { "type": "number", "example": 20000 },
+          "tracking_number": { "type": "string", "nullable": true, "example": "JNE123456789" },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "nama_produk": { "type": "string", "example": "Jersey" },
+                "jumlah": { "type": "integer", "example": 1 },
+                "harga": { "type": "number", "example": 150000 }
+              }
+            }
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": { "type": "string", "example": "Invalid credentials" },
+          "errors": { "type": "object", "example": { "email": ["The email has already been taken."] } }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/auth/register": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Register a new user",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "email", "password", "password_confirmation", "telepon"],
+                "properties": {
+                  "name": { "type": "string", "maxLength": 255, "example": "Budi Santoso" },
+                  "email": { "type": "string", "format": "email", "example": "budi@example.com" },
+                  "password": { "type": "string", "format": "password", "example": "password123", "minLength": 6 },
+                  "password_confirmation": { "type": "string", "format": "password", "example": "password123", "description": "Must match password field" },
+                  "telepon": { "type": "string", "maxLength": 20, "example": "081298765432" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "message": { "type": "string", "example": "Register berhasil" },
+                    "user": { "$ref": "#/components/schemas/User" }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Login and retrieve JWT token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string", "format": "email", "example": "budi@example.com" },
+                  "password": { "type": "string", "format": "password", "example": "password123" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "message": { "type": "string", "example": "Login berhasil" },
+                    "token": { "type": "string", "example": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..." },
+                    "user": { "$ref": "#/components/schemas/User" }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": { 
+              "application/json": { 
+                "schema": { 
+                  "type": "object", 
+                  "properties": { 
+                    "success": { "type": "boolean", "example": false },
+                    "message": { "type": "string", "example": "401 Invalid Credentials" } 
+                  } 
+                } 
+              } 
+            }
+          }
+        }
+      }
+    },
+    "/produk": {
+      "get": {
+        "tags": ["Public Catalog"],
+        "summary": "Get list of products",
+        "parameters": [
+          { "name": "search", "in": "query", "schema": { "type": "string" }, "description": "Search by product name", "example": "sepatu" },
+          { "name": "kategori", "in": "query", "schema": { "type": "string" }, "description": "Filter by category slug or ID", "example": "padel" },
+          { "name": "sort", "in": "query", "schema": { "type": "string", "enum": ["newest", "price_low", "price_high"] }, "description": "Sort order", "example": "newest" }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of products with pagination",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "message": { "type": "string", "example": "Products retrieved successfully" },
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Product" }
+                    },
+                    "links": { 
+                      "type": "object", 
+                      "description": "Pagination links",
+                      "properties": {
+                        "first": { "type": "string", "example": "http://localhost:8000/api/produk?page=1" },
+                        "last": { "type": "string", "example": "http://localhost:8000/api/produk?page=5" },
+                        "prev": { "type": "string", "nullable": true },
+                        "next": { "type": "string", "nullable": true }
+                      }
+                    },
+                    "meta": { 
+                      "type": "object", 
+                      "description": "Pagination metadata",
+                      "properties": {
+                        "current_page": { "type": "integer", "example": 1 },
+                        "from": { "type": "integer", "example": 1 },
+                        "last_page": { "type": "integer", "example": 5 },
+                        "per_page": { "type": "integer", "example": 15 },
+                        "to": { "type": "integer", "example": 15 },
+                        "total": { "type": "integer", "example": 67 }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/customer/alamat": {
+      "get": {
+        "tags": ["Customer Address"],
+        "summary": "List user addresses",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "List of addresses",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": { "type": "array", "items": { "$ref": "#/components/schemas/Address" } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Customer Address"],
+        "summary": "Create new address",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["label", "nama_penerima", "telepon_penerima", "alamat_lengkap", "provinsi", "kota", "kecamatan"],
+                "properties": {
+                  "label": { "type": "string", "example": "Kantor" },
+                  "nama_penerima": { "type": "string", "example": "Budi Santoso" },
+                  "telepon_penerima": { "type": "string", "maxLength": 20, "example": "08123456789" },
+                  "alamat_lengkap": { "type": "string", "example": "Gedung Cyber Lt 2, Jl. Kuningan Barat" },
+                  "provinsi": { "type": "string", "maxLength": 255, "example": "DKI Jakarta" },
+                  "kota": { "type": "string", "maxLength": 255, "example": "Jakarta Selatan" },
+                  "kecamatan": { "type": "string", "maxLength": 255, "example": "Mampang Prapatan" },
+                  "kelurahan": { "type": "string", "maxLength": 255, "example": "Kuningan Barat" },
+                  "kode_pos": { "type": "string", "maxLength": 10, "example": "12710" },
+                  "area_id": { "type": "string", "maxLength": 100, "description": "Biteship area ID (auto-fetched if not provided)", "example": "IDNP6ID100001" },
+                  "latitude": { "type": "number", "minimum": -90, "maximum": 90, "example": -6.229728 },
+                  "longitude": { "type": "number", "minimum": -180, "maximum": 180, "example": 106.816406 },
+                  "is_default": { "type": "boolean", "example": true }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Address created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "message": { "type": "string", "example": "Alamat berhasil ditambahkan" },
+                    "data": { "$ref": "#/components/schemas/Address" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/customer/keranjang": {
+      "get": {
+        "tags": ["Cart"],
+        "summary": "Get cart contents",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Cart details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "message": { "type": "string", "example": "Data keranjang ditemukan" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "integer", "example": 1 },
+                        "user_id": { "type": "integer", "example": 55 },
+                        "items": { "type": "array", "items": { "$ref": "#/components/schemas/CartItem" } }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Cart"],
+        "summary": "Add item to cart",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["produk_id", "jumlah"],
+                "properties": {
+                  "produk_id": { "type": "integer", "example": 101 },
+                  "jumlah": { "type": "integer", "minimum": 1, "example": 2 },
+                  "varian_id": { "type": "integer", "description": "Single variant ID (legacy support)", "example": 12 },
+                  "varian_ids": { 
+                    "type": "array", 
+                    "description": "Array of variant IDs for multiple variants (Size + Color)",
+                    "items": { "type": "integer" },
+                    "example": [12, 25]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Item added to cart",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "message": { "type": "string", "example": "Produk berhasil ditambahkan ke keranjang" },
+                    "data": { "$ref": "#/components/schemas/CartItem" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/customer/checkout/shipping-rates": {
+      "post": {
+        "tags": ["Checkout"],
+        "summary": "Check shipping rates (Biteship)",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["destination_area_id"],
+                "properties": {
+                  "destination_area_id": { "type": "string", "example": "IDNP6ID100001" },
+                  "destination_postal_code": { "type": "string", "example": "12710" },
+                  "destination_latitude": { "type": "number", "example": -6.229728 },
+                  "destination_longitude": { "type": "number", "example": 106.816406 },
+                  "buy_now": { "type": "boolean", "example": false, "description": "If true, calculate for single product buy-now, else use cart" },
+                  "produk_id": { "type": "integer", "description": "Required if buy_now=true", "example": 101 },
+                  "jumlah": { "type": "integer", "minimum": 1, "description": "Required if buy_now=true", "example": 2 },
+                  "varian_ids": { "type": "array", "items": { "type": "integer" }, "description": "Optional variant IDs for buy_now", "example": [12, 25] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "List of available couriers and rates",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "pricing": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "courier_name": { "type": "string", "example": "JNE" },
+                          "courier_service_name": { "type": "string", "example": "REG" },
+                          "price": { "type": "number", "example": 15000 },
+                          "duration": { "type": "string", "example": "1-2 Days" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/customer/checkout/process": {
+      "post": {
+        "tags": ["Checkout"],
+        "summary": "Process checkout and create order",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["nama_penerima", "nomor_telepon", "alamat_pengiriman", "metode_pembayaran", "metode_pengiriman"],
+                "properties": {
+                  "nama_penerima": { "type": "string", "maxLength": 255, "example": "Budi Santoso" },
+                  "nomor_telepon": { "type": "string", "maxLength": 20, "example": "081234567890" },
+                  "alamat_pengiriman": { "type": "string", "example": "Jl. Sudirman No. 123, Jakarta Selatan" },
+                  "metode_pembayaran": { "type": "string", "enum": ["transfer", "cod", "midtrans"], "example": "midtrans" },
+                  "metode_pengiriman": { "type": "string", "example": "jne_reg" },
+                  "shipping_cost": { "type": "number", "minimum": 0, "example": 15000 },
+                  "shipping_courier_code": { "type": "string", "maxLength": 50, "example": "jne" },
+                  "shipping_courier_service": { "type": "string", "maxLength": 100, "example": "REG" },
+                  "item_ids": { "type": "array", "items": { "type": "integer" }, "description": "Selected cart item IDs to checkout", "example": [1, 2, 3] },
+                  "buy_now": { "type": "boolean", "example": false },
+                  "produk_id": { "type": "integer", "description": "Required if buy_now=true", "example": 101 },
+                  "jumlah": { "type": "integer", "minimum": 1, "description": "Required if buy_now=true", "example": 2 },
+                  "varian_ids": { "type": "array", "items": { "type": "integer" }, "example": [12, 25] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Order created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Checkout berhasil" },
+                    "order": { "$ref": "#/components/schemas/Order" },
+                    "midtrans": {
+                      "type": "object",
+                      "properties": {
+                        "snap_token": { "type": "string", "example": "82c512f6-..." },
+                        "redirect_url": { "type": "string", "example": "https://app.midtrans.com/..." }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/customer/payment/create-token": {
+      "post": {
+        "tags": ["Payment"],
+        "summary": "Create Midtrans Snap Token for existing order",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["order_id"],
+                "properties": {
+                  "order_id": { "type": "integer", "example": 1, "description": "Order ID from pesanan table" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Snap token created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "snap_token": { "type": "string", "example": "e48447d1-97b7-4b6e-b77e-8b48e3a49bce" },
+                    "order_id": { "type": "integer", "example": 1 }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/customer/payment/check-status": {
+      "post": {
+        "tags": ["Payment"],
+        "summary": "Check payment status from Midtrans",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["order_id"],
+                "properties": {
+                  "order_id": { "type": "integer", "example": 1, "description": "Order ID from pesanan table" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Payment status retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "status": { "type": "string", "example": "paid", "enum": ["pending", "paid", "failed", "expired"] },
+                        "transaction_id": { "type": "string", "example": "ATHLEON-1-1234567890" },
+                        "midtrans_status": { "type": "string", "example": "settlement" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/pesanan/{id}/ship": {
+      "post": {
+        "tags": ["Admin Order Management"],
+        "summary": "Mark order as shipped and input tracking number",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["tracking_number"],
+                "properties": {
+                  "tracking_number": { "type": "string", "example": "JP1234567890" },
+                  "courier_code": { "type": "string", "example": "jne" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Order status updated to Shipped",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Order marked as shipped" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Logout and invalidate JWT token",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Successfully logged out",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Successfully logged out" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Refresh JWT token",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Token refreshed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "access_token": { "type": "string" },
+                    "token_type": { "type": "string", "example": "bearer" },
+                    "expires_in": { "type": "integer", "example": 3600 }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/me": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Get authenticated user profile (POST)",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "User profile",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/User" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/send-otp": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Send OTP for password reset",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email"],
+                "properties": {
+                  "email": { "type": "string", "format": "email", "example": "budi@example.com" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OTP sent to email",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "message": { "type": "string", "example": "Kode OTP telah dikirim ke email Anda" },
+                    "expires_in": { "type": "integer", "description": "Expiry time in seconds", "example": 600 }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/verify-otp": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Verify OTP code",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "otp"],
+                "properties": {
+                  "email": { "type": "string", "format": "email", "example": "budi@example.com" },
+                  "otp": { "type": "string", "minLength": 6, "maxLength": 6, "example": "123456" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OTP verified successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "message": { "type": "string", "example": "OTP berhasil diverifikasi" },
+                    "valid": { "type": "boolean", "example": true }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/reset-password-otp": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Reset password using OTP",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "otp", "password"],
+                "properties": {
+                  "email": { "type": "string", "format": "email", "example": "budi@example.com" },
+                  "otp": { "type": "string", "example": "123456" },
+                  "password": { "type": "string", "format": "password", "example": "newpassword123", "minLength": 8 },
+                  "password_confirmation": { "type": "string", "example": "newpassword123" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password reset successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Password has been reset successfully" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/change-password": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Change password for authenticated user",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["current_password", "new_password", "new_password_confirmation"],
+                "properties": {
+                  "current_password": { "type": "string", "format": "password", "example": "oldpassword123" },
+                  "new_password": { "type": "string", "format": "password", "example": "newpassword123", "minLength": 6 },
+                  "new_password_confirmation": { "type": "string", "format": "password", "example": "newpassword123", "description": "Must match new_password" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password changed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "message": { "type": "string", "example": "Password berhasil diubah" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/customer/profile": {
+      "put": {
+        "tags": ["Customer Profile"],
+        "summary": "Update customer profile",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string", "maxLength": 255, "example": "Budi Santoso Updated" },
+                  "email": { "type": "string", "format": "email", "example": "budi.updated@example.com" },
+                  "telepon": { "type": "string", "maxLength": 20, "example": "081234567890" },
+                  "alamat": { "type": "string", "example": "Jl. Baru No. 123" },
+                  "jenis_kelamin": { "type": "string", "enum": ["L", "P", "laki-laki", "perempuan"], "example": "L" }
+                },
+                "description": "All fields are optional (sometimes validation)"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Profile updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "message": { "type": "string", "example": "Profil berhasil diperbarui" },
+                    "data": { "$ref": "#/components/schemas/User" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/produk/{id}": {
+      "get": {
+        "tags": ["Public Catalog"],
+        "summary": "Get product detail by ID",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Product detail",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": { "$ref": "#/components/schemas/Product" }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Product not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "message": { "type": "string", "example": "Produk tidak ditemukan" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/banners": {
+      "get": {
+        "tags": ["Public Catalog"],
+        "summary": "Get all banners",
+        "responses": {
+          "200": {
+            "description": "List of banners",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": { "type": "integer", "example": 1 },
+                      "judul": { "type": "string", "example": "Summer Sale" },
+                      "deskripsi": { "type": "string", "example": "Up to 50% off" },
+                      "gambar": { "type": "string", "example": "https://api.athleon.com/storage/banners/summer.jpg" },
+                      "is_active": { "type": "boolean", "example": true }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/kategori": {
+      "get": {
+        "tags": ["Public Catalog"],
+        "summary": "Get all categories",
+        "responses": {
+          "200": {
+            "description": "List of categories",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": { "type": "integer", "example": 1 },
+                      "nama": { "type": "string", "example": "Pakaian Pria" },
+                      "deskripsi": { "type": "string", "example": "Koleksi pakaian pria" },
+                      "gambar_url": { "type": "string", "example": "https://api.athleon.com/storage/kategori/pria.jpg" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/customer/keranjang/{id}": {
+      "put": {
+        "tags": ["Cart"],
+        "summary": "Update cart item quantity",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["jumlah"],
+                "properties": {
+                  "jumlah": { "type": "integer", "example": 3 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Cart item updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Cart item updated" },
+                    "item": { "$ref": "#/components/schemas/CartItem" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Cart"],
+        "summary": "Remove item from cart",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Item removed from cart",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Item removed from cart" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/customer/buy-now": {
+      "post": {
+        "tags": ["Cart"],
+        "summary": "Buy now - direct checkout without adding to cart",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["produk_id", "jumlah"],
+                "properties": {
+                  "produk_id": { "type": "integer", "example": 101 },
+                  "jumlah": { "type": "integer", "minimum": 1, "example": 1 },
+                  "varian_ids": { "type": "array", "items": { "type": "integer" }, "example": [1, 2] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Product ready for checkout",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Ready for checkout" },
+                    "cart_id": { "type": "integer", "example": 999 }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/customer/wishlist": {
+      "get": {
+        "tags": ["Wishlist"],
+        "summary": "Get user wishlist",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "List of wishlist items",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "message": { "type": "string", "example": "Wishlist berhasil diambil" },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "integer", "example": 1 },
+                          "produk": { "$ref": "#/components/schemas/Product" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Wishlist"],
+        "summary": "Add product to wishlist",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["produk_id"],
+                "properties": {
+                  "produk_id": { "type": "integer", "example": 101 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Product added to wishlist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "message": { "type": "string", "example": "Produk ditambahkan ke wishlist" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "integer", "example": 1 },
+                        "produk_id": { "type": "integer", "example": 101 },
+                        "produk": { "$ref": "#/components/schemas/Product" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/customer/wishlist/{produk}": {
+      "delete": {
+        "tags": ["Wishlist"],
+        "summary": "Remove product from wishlist",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "produk", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Product removed from wishlist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "message": { "type": "string", "example": "Produk dihapus dari wishlist" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/customer/alamat/{id}": {
+      "get": {
+        "tags": ["Customer Address"],
+        "summary": "Get single address detail",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Address detail",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Address" }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Customer Address"],
+        "summary": "Update address",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "label": { "type": "string", "example": "Rumah Baru" },
+                  "nama_penerima": { "type": "string", "example": "Budi Santoso" },
+                  "telepon_penerima": { "type": "string", "example": "08123456789" },
+                  "alamat_lengkap": { "type": "string", "example": "Jl. Gatot Subroto No. 10" },
+                  "kode_pos": { "type": "string", "example": "12950" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Address updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Address updated successfully" },
+                    "address": { "$ref": "#/components/schemas/Address" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Customer Address"],
+        "summary": "Delete address",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Address deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Address deleted successfully" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/customer/alamat/{id}/set-default": {
+      "post": {
+        "tags": ["Customer Address"],
+        "summary": "Set address as default",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Address set as default",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Default address updated" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/customer/checkout/summary": {
+      "get": {
+        "tags": ["Checkout"],
+        "summary": "Get checkout summary (cart + default address)",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Checkout summary",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "cart": {
+                      "type": "object",
+                      "properties": {
+                        "items": { "type": "array", "items": { "$ref": "#/components/schemas/CartItem" } },
+                        "total_harga": { "type": "number", "example": 300000 }
+                      }
+                    },
+                    "default_address": { "$ref": "#/components/schemas/Address" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/customer/pesanan": {
+      "get": {
+        "tags": ["Customer Orders"],
+        "summary": "Get user orders",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "status", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of orders",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Order" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Customer Orders"],
+        "summary": "Create order from cart",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["nama_penerima", "alamat_pengiriman", "nomor_telepon", "metode_pembayaran", "metode_pengiriman"],
+                "properties": {
+                  "nama_penerima": { "type": "string", "maxLength": 255, "example": "Budi Santoso" },
+                  "alamat_pengiriman": { "type": "string", "example": "Jl. Sudirman No. 10, Jakarta Selatan" },
+                  "nomor_telepon": { "type": "string", "maxLength": 20, "example": "08123456789" },
+                  "metode_pembayaran": { "type": "string", "enum": ["bank", "ewallet", "cod"], "example": "bank" },
+                  "metode_pengiriman": { "type": "string", "maxLength": 255, "example": "JNE REG" },
+                  "shipping_cost": { "type": "number", "minimum": 0, "example": 15000 },
+                  "shipping_courier_code": { "type": "string", "maxLength": 50, "example": "jne" },
+                  "shipping_courier_service": { "type": "string", "maxLength": 100, "example": "reg" },
+                  "tracking_number": { "type": "string", "maxLength": 100, "example": "JNE1234567890" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Order created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "message": { "type": "string", "example": "Pesanan berhasil dibuat" },
+                    "data": { "$ref": "#/components/schemas/Order" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/customer/pesanan/{id}": {
+      "get": {
+        "tags": ["Customer Orders"],
+        "summary": "Get order detail",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Order detail",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Order" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/customer/pesanan/{id}/cancel": {
+      "post": {
+        "tags": ["Customer Orders"],
+        "summary": "Cancel order",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": { "type": "string", "example": "Salah order" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Order cancelled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Order cancelled successfully" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/customer/pesanan/{id}/complete": {
+      "post": {
+        "tags": ["Customer Orders"],
+        "summary": "Mark order as complete (received)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Order marked as complete",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Order completed" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/customer/pesanan/{id}/rating": {
+      "post": {
+        "tags": ["Customer Orders"],
+        "summary": "Rate completed order",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["rating"],
+                "properties": {
+                  "rating": { "type": "integer", "minimum": 1, "maximum": 5, "example": 5 },
+                  "rating_feedback": { "type": "string", "example": "Produk bagus, pengiriman cepat!" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Rating submitted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Rating submitted successfully" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/customer/pesanan/{id}/tracking": {
+      "get": {
+        "tags": ["Customer Orders"],
+        "summary": "Track order shipment",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tracking information",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "courier": { "type": "string", "example": "JNE" },
+                    "tracking_number": { "type": "string", "example": "JP123456789" },
+                    "status": { "type": "string", "example": "delivered" },
+                    "history": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "date": { "type": "string", "example": "2025-11-20 14:30" },
+                          "description": { "type": "string", "example": "Package delivered" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/customer/notifications": {
+      "get": {
+        "tags": ["Notifications"],
+        "summary": "Get user notifications",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "per_page", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 } },
+          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["unread", "all"] } }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of notifications",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "integer", "example": 1 },
+                          "title": { "type": "string", "example": "Order Shipped" },
+                          "message": { "type": "string", "example": "Your order has been shipped" },
+                          "type": { "type": "string", "example": "order" },
+                          "read_at": { "type": "string", "nullable": true, "example": null },
+                          "pesanan": { "type": "object", "nullable": true },
+                          "pembayaran": { "type": "object", "nullable": true }
+                        }
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "total": { "type": "integer", "example": 50 },
+                        "per_page": { "type": "integer", "example": 20 },
+                        "current_page": { "type": "integer", "example": 1 },
+                        "last_page": { "type": "integer", "example": 3 }
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "unread_count": { "type": "integer", "example": 5 }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Notifications"],
+        "summary": "Create custom notification",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["title", "message"],
+                "properties": {
+                  "title": { "type": "string", "maxLength": 255, "example": "Payment Reminder" },
+                  "message": { "type": "string", "example": "Please complete your payment" },
+                  "type": { "type": "string", "maxLength": 50, "example": "general" },
+                  "pesanan_id": { "type": "integer", "description": "Must be owned by user", "example": 123 },
+                  "pembayaran_id": { "type": "integer", "description": "Must be owned by user", "example": 456 },
+                  "data": { "type": "object", "description": "Additional JSON data" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Notification created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "message": { "type": "string", "example": "Notifikasi berhasil dibuat" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "integer", "example": 1 },
+                        "title": { "type": "string", "example": "Payment Reminder" },
+                        "message": { "type": "string", "example": "Please complete your payment" },
+                        "type": { "type": "string", "example": "general" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/customer/notifications/{notification}/read": {
+      "post": {
+        "tags": ["Notifications"],
+        "summary": "Mark notification as read",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "notification", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Notification marked as read",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "message": { "type": "string", "example": "Notifikasi ditandai sebagai dibaca" },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "unread_count": { "type": "integer", "example": 4 }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/customer/notifications/read-all": {
+      "post": {
+        "tags": ["Notifications"],
+        "summary": "Mark all notifications as read",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "All notifications marked as read",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "message": { "type": "string", "example": "Semua notifikasi ditandai sebagai dibaca" },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "unread_count": { "type": "integer", "example": 0 }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/dashboard": {
+      "get": {
+        "tags": ["Admin Dashboard"],
+        "summary": "Get dashboard statistics",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Dashboard stats",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "stats": {
+                      "type": "object",
+                      "properties": {
+                        "totalProducts": { "type": "integer", "example": 120 },
+                        "totalOrders": { "type": "integer", "example": 150 },
+                        "totalCustomers": { "type": "integer", "example": 89 },
+                        "totalRevenue": { "type": "number", "example": 45000000 },
+                        "pendingOrders": { "type": "integer", "example": 12 },
+                        "completedOrders": { "type": "integer", "example": 105 },
+                        "cancelledOrders": { "type": "integer", "example": 8 },
+                        "monthlyRevenue": { "type": "number", "example": 8500000 },
+                        "revenueGrowth": { "type": "number", "description": "Percentage growth", "example": 12.5 }
+                      }
+                    },
+                    "recentOrders": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "integer", "example": 2024001 },
+                          "user": {
+                            "type": "object",
+                            "properties": {
+                              "name": { "type": "string", "example": "Budi Santoso" },
+                              "email": { "type": "string", "example": "budi@example.com" }
+                            }
+                          },
+                          "status": { "type": "string", "example": "Dikemas" },
+                          "total": { "type": "number", "example": 350000 },
+                          "total_harga": { "type": "number", "example": 350000 },
+                          "created_at": { "type": "string", "format": "date-time" }
+                        }
+                      }
+                    },
+                    "salesData": {
+                      "type": "array",
+                      "description": "6 months sales chart data",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": { "type": "string", "example": "Jan 2024" },
+                          "penjualan": { "type": "integer", "example": 45 },
+                          "pendapatan": { "type": "integer", "example": 12500000 }
+                        }
+                      }
+                    },
+                    "topProducts": {
+                      "type": "array",
+                      "description": "Top 5 best-selling products",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": { "type": "string", "example": "Jersey Lari Premium" },
+                          "sold": { "type": "integer", "example": 89 }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/produk": {
+      "get": {
+        "tags": ["Admin Products"],
+        "summary": "List all products (admin)",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "List of products",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Product" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Admin Products"],
+        "summary": "Create new product",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["nama", "harga", "stok", "idKategori"],
+                "properties": {
+                  "nama": { "type": "string", "example": "Jersey Lari Premium" },
+                  "deskripsi": { "type": "string", "example": "Jersey berkualitas tinggi" },
+                  "harga": { "type": "number", "example": 150000 },
+                  "stok": { "type": "integer", "example": 50 },
+                  "idKategori": { "type": "integer", "example": 5 },
+                  "gambar": { "type": "string", "format": "binary", "description": "Main product image" },
+                  "galeri[]": { "type": "array", "items": { "type": "string", "format": "binary" }, "description": "Gallery images" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Product created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Product created successfully" },
+                    "product": { "$ref": "#/components/schemas/Product" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/produk/{id}": {
+      "get": {
+        "tags": ["Admin Products"],
+        "summary": "Get product detail (admin)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Product detail",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Product" }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Admin Products"],
+        "summary": "Update product",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nama": { "type": "string", "example": "Jersey Lari Premium Updated" },
+                  "harga": { "type": "number", "example": 160000 },
+                  "stok": { "type": "integer", "example": 45 },
+                  "gambar": { "type": "string", "format": "binary" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Product updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Product updated successfully" },
+                    "product": { "$ref": "#/components/schemas/Product" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Admin Products"],
+        "summary": "Delete product",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Product deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Product deleted successfully" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/kategori": {
+      "get": {
+        "tags": ["Admin Categories"],
+        "summary": "List all categories (admin)",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "List of categories",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "message": { "type": "string", "example": "Daftar kategori berhasil diambil" },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "integer", "example": 1 },
+                          "nama": { "type": "string", "example": "Pakaian Pria" },
+                          "deskripsi": { "type": "string", "example": "Koleksi pakaian untuk pria" },
+                          "gambar": { "type": "string", "example": "kategori/1234567890.jpg" },
+                          "produk_count": { "type": "integer", "example": 25 }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Admin Categories"],
+        "summary": "Create new category",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["nama"],
+                "properties": {
+                  "nama": { "type": "string", "maxLength": 100, "example": "Aksesoris" },
+                  "deskripsi": { "type": "string", "example": "Koleksi aksesoris olahraga" },
+                  "gambar": { "type": "string", "format": "binary", "description": "Image file (jpg, jpeg, png, webp, max 5MB)" },
+                  "gambar_url": { "type": "string", "format": "uri", "description": "Or provide direct URL instead of file" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Category created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "message": { "type": "string", "example": "Kategori berhasil ditambahkan" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "integer", "example": 5 },
+                        "nama": { "type": "string", "example": "Aksesoris" },
+                        "deskripsi": { "type": "string", "example": "Koleksi aksesoris olahraga" },
+                        "gambar": { "type": "string", "example": "kategori/1234567890.jpg" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/kategori/{kategori}": {
+      "put": {
+        "tags": ["Admin Categories"],
+        "summary": "Update category",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "kategori", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nama": { "type": "string", "maxLength": 100, "example": "Aksesoris Updated" },
+                  "deskripsi": { "type": "string", "example": "Deskripsi baru" },
+                  "gambar": { "type": "string", "format": "binary" },
+                  "gambar_url": { "type": "string", "format": "uri" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Category updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "message": { "type": "string", "example": "Kategori berhasil diperbarui" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "integer", "example": 5 },
+                        "nama": { "type": "string", "example": "Aksesoris Updated" },
+                        "deskripsi": { "type": "string", "example": "Deskripsi baru" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Admin Categories"],
+        "summary": "Delete category",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "kategori", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Category deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "message": { "type": "string", "example": "Kategori berhasil dihapus" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/pesanan": {
+      "get": {
+        "tags": ["Admin Order Management"],
+        "summary": "List all orders (admin)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "status", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of orders",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Order" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/pesanan/{id}": {
+      "get": {
+        "tags": ["Admin Order Management"],
+        "summary": "Get order detail (admin)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Order detail",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": { "$ref": "#/components/schemas/Order" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/pesanan/{id}/status": {
+      "put": {
+        "tags": ["Admin Order Management"],
+        "summary": "Update order status manually",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["status"],
+                "properties": {
+                  "status": { 
+                    "type": "string", 
+                    "enum": ["Belum Dibayar", "Sudah Dibayar", "Dikemas", "Dikirim", "Selesai", "Dibatalkan"], 
+                    "example": "Dikemas" 
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Order status updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "message": { "type": "string", "example": "Status pesanan berhasil diperbarui" },
+                    "data": { "$ref": "#/components/schemas/Order" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/pesanan/{id}/pack": {
+      "post": {
+        "tags": ["Admin Order Management"],
+        "summary": "Mark order as packed",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Order marked as packed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Order packed" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/pesanan/{id}/tracking": {
+      "put": {
+        "tags": ["Admin Order Management"],
+        "summary": "Update tracking number",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["tracking_number"],
+                "properties": {
+                  "tracking_number": { "type": "string", "example": "JNE1234567890" },
+                  "kurir_code": { "type": "string", "example": "jne" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Tracking updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Tracking number updated" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/pesanan/{id}/complete": {
+      "post": {
+        "tags": ["Admin Order Management"],
+        "summary": "Mark order as completed (admin)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Order completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Order marked as completed" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/pesanan/{id}/cancel": {
+      "post": {
+        "tags": ["Admin Order Management"],
+        "summary": "Cancel order (admin)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": { "type": "string", "example": "Out of stock" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Order cancelled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Order cancelled successfully" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/users": {
+      "get": {
+        "tags": ["Admin Users"],
+        "summary": "List all users with pagination and filters",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "search", "in": "query", "schema": { "type": "string" }, "description": "Search by name or email" },
+          { "name": "role", "in": "query", "schema": { "type": "string", "enum": ["admin", "customer"] } },
+          { "name": "sort_by", "in": "query", "schema": { "type": "string", "default": "created_at" } },
+          { "name": "sort_order", "in": "query", "schema": { "type": "string", "enum": ["asc", "desc"], "default": "desc" } },
+          { "name": "per_page", "in": "query", "schema": { "type": "integer", "default": 15 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of users with pagination",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "users": {
+                      "type": "object",
+                      "properties": {
+                        "current_page": { "type": "integer", "example": 1 },
+                        "data": {
+                          "type": "array",
+                          "items": { "$ref": "#/components/schemas/User" }
+                        },
+                        "total": { "type": "integer", "example": 150 },
+                        "per_page": { "type": "integer", "example": 15 },
+                        "last_page": { "type": "integer", "example": 10 }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/users/{id}": {
+      "get": {
+        "tags": ["Admin Users"],
+        "summary": "Get user detail",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "User detail",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "user": { "$ref": "#/components/schemas/User" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Admin Users"],
+        "summary": "Update user",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string", "example": "John Doe Updated" },
+                  "role": { "type": "string", "enum": ["admin", "customer"], "example": "customer" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "User updated successfully" },
+                    "user": { "$ref": "#/components/schemas/User" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Admin Users"],
+        "summary": "Delete user",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "User deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "User deleted successfully" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/banners": {
+      "get": {
+        "tags": ["Admin Banners"],
+        "summary": "List all banners (admin)",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "List of banners",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": { "type": "integer", "example": 1 },
+                      "judul": { "type": "string", "example": "Summer Sale" },
+                      "is_active": { "type": "boolean", "example": true }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Admin Banners"],
+        "summary": "Create new banner",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["judul", "gambar"],
+                "properties": {
+                  "judul": { "type": "string", "example": "Promo Hari Kemerdekaan" },
+                  "deskripsi": { "type": "string", "example": "Diskon hingga 70%" },
+                  "gambar": { "type": "string", "format": "binary" },
+                  "is_active": { "type": "boolean", "example": true }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Banner created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Banner created successfully" },
+                    "banner": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "integer", "example": 5 },
+                        "judul": { "type": "string", "example": "Promo Hari Kemerdekaan" },
+                        "gambar": { "type": "string", "example": "https://api.athleon.com/storage/banners/promo.jpg" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/banners/{id}": {
+      "get": {
+        "tags": ["Admin Banners"],
+        "summary": "Get banner detail",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Banner detail",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "integer", "example": 1 },
+                    "judul": { "type": "string", "example": "Summer Sale" },
+                    "deskripsi": { "type": "string", "example": "Up to 50% off" },
+                    "gambar": { "type": "string", "example": "https://api.athleon.com/storage/banners/summer.jpg" },
+                    "is_active": { "type": "boolean", "example": true }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Admin Banners"],
+        "summary": "Update banner (JSON)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "judul": { "type": "string", "example": "Promo Updated" },
+                  "is_active": { "type": "boolean", "example": false }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Banner updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Banner updated successfully" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Admin Banners"],
+        "summary": "Update banner (FormData with image)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "judul": { "type": "string", "example": "Promo Updated" },
+                  "gambar": { "type": "string", "format": "binary" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Banner updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Banner updated successfully" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Admin Banners"],
+        "summary": "Delete banner",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Banner deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Banner deleted successfully" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/payment/notification": {
+      "post": {
+        "tags": ["Webhooks"],
+        "summary": "Midtrans payment webhook",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "order_id": { "type": "string", "example": "INV-2025-001" },
+                  "transaction_status": { "type": "string", "example": "settlement" },
+                  "gross_amount": { "type": "string", "example": "150000.00" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Webhook processed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "OK" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/payment/finish": {
+      "get": {
+        "tags": ["Webhooks"],
+        "summary": "Midtrans redirect finish page",
+        "parameters": [
+          { "name": "order_id", "in": "query", "schema": { "type": "string" } },
+          { "name": "status_code", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Payment finish page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Payment completed" },
+                    "order_id": { "type": "string", "example": "INV-2025-001" },
+                    "status": { "type": "string", "example": "success" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/wilayah/provinces": {
+      "get": {
+        "tags": ["Wilayah Indonesia"],
+        "summary": "Get all provinces",
+        "responses": {
+          "200": {
+            "description": "List of provinces",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "code": { "type": "string", "example": "31" },
+                      "name": { "type": "string", "example": "DKI Jakarta" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/wilayah/cities/{provinceCode}": {
+      "get": {
+        "tags": ["Wilayah Indonesia"],
+        "summary": "Get cities by province",
+        "parameters": [
+          { "name": "provinceCode", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of cities",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "code": { "type": "string", "example": "3171" },
+                      "name": { "type": "string", "example": "Jakarta Selatan" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/wilayah/districts/{cityCode}": {
+      "get": {
+        "tags": ["Wilayah Indonesia"],
+        "summary": "Get districts by city",
+        "parameters": [
+          { "name": "cityCode", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of districts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "code": { "type": "string", "example": "317101" },
+                      "name": { "type": "string", "example": "Kebayoran Baru" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tracking": {
+      "get": {
+        "tags": ["Tracking"],
+        "summary": "Track shipment by waybill using BinderByte API",
+        "parameters": [
+          { "name": "awb", "in": "query", "required": true, "schema": { "type": "string" }, "description": "Airway bill / resi number", "example": "JP123456789" },
+          { "name": "courier", "in": "query", "required": true, "schema": { "type": "string" }, "description": "Courier code (lowercase)", "example": "jne" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tracking info",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "summary": {
+                          "type": "object",
+                          "properties": {
+                            "awb": { "type": "string", "example": "JP123456789" },
+                            "courier": { "type": "string", "example": "jne" },
+                            "status": { "type": "string", "example": "DELIVERED" }
+                          }
+                        },
+                        "history": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "date": { "type": "string", "example": "2024-01-15 14:30:00" },
+                              "desc": { "type": "string", "example": "Package delivered" }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "message": { "type": "string", "example": "Successfully tracked package" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tracking/couriers": {
+      "get": {
+        "tags": ["Tracking"],
+        "summary": "Get list of supported couriers",
+        "responses": {
+          "200": {
+            "description": "List of couriers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "code": { "type": "string", "example": "jne" },
+                          "name": { "type": "string", "example": "JNE" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/customer/shipping/rates": {
+      "post": {
+        "tags": ["Shipping"],
+        "summary": "Calculate shipping rates using Biteship",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["destination_address"],
+                "properties": {
+                  "destination_area_id": { "type": "string", "example": "IDNP6ID100001" },
+                  "destination_postal_code": { "type": "string", "example": "12710" },
+                  "destination_address": { "type": "string", "example": "Jl. Sudirman No. 10" },
+                  "couriers": { "type": "string", "example": "jne,tiki,sicepat" },
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": { "type": "string", "example": "Sepatu Lari" },
+                        "value": { "type": "number", "example": 500000 },
+                        "weight": { "type": "number", "example": 1000 },
+                        "quantity": { "type": "number", "example": 1 }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Shipping rates",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "courier_code": { "type": "string", "example": "jne" },
+                          "courier_service_code": { "type": "string", "example": "reg" },
+                          "price": { "type": "number", "example": 15000 }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/customer/shipping/track": {
+      "post": {
+        "tags": ["Shipping"],
+        "summary": "Track shipment using Biteship",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["waybill_id", "courier_code"],
+                "properties": {
+                  "waybill_id": { "type": "string", "example": "JNE123456789" },
+                  "courier_code": { "type": "string", "example": "jne" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Tracking info",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "status": { "type": "string", "example": "delivered" },
+                        "history": { "type": "array", "items": { "type": "object" } }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/export/orders/pdf": {
+      "get": {
+        "tags": ["Admin Export"],
+        "summary": "Export orders to PDF",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "start_date", "in": "query", "schema": { "type": "string", "format": "date" }, "example": "2024-01-01" },
+          { "name": "end_date", "in": "query", "schema": { "type": "string", "format": "date" }, "example": "2024-12-31" },
+          { "name": "status", "in": "query", "schema": { "type": "string" }, "example": "Selesai" },
+          { "name": "timestamp", "in": "query", "schema": { "type": "string" }, "example": "2024-01-15" }
+        ],
+        "responses": {
+          "200": {
+            "description": "PDF file download",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/export/orders/excel": {
+      "get": {
+        "tags": ["Admin Export"],
+        "summary": "Export orders to Excel",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "start_date", "in": "query", "schema": { "type": "string", "format": "date" } },
+          { "name": "end_date", "in": "query", "schema": { "type": "string", "format": "date" } },
+          { "name": "status", "in": "query", "schema": { "type": "string" } },
+          { "name": "timestamp", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Excel file download",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/export/products/pdf": {
+      "get": {
+        "tags": ["Admin Export"],
+        "summary": "Export products to PDF",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "timestamp", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "PDF file download",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/export/products/excel": {
+      "get": {
+        "tags": ["Admin Export"],
+        "summary": "Export products to Excel",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "timestamp", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Excel file download",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/export/revenue/pdf": {
+      "get": {
+        "tags": ["Admin Export"],
+        "summary": "Export revenue report to PDF",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "start_date", "in": "query", "schema": { "type": "string", "format": "date" } },
+          { "name": "end_date", "in": "query", "schema": { "type": "string", "format": "date" } },
+          { "name": "timestamp", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "PDF file download",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/export/revenue/excel": {
+      "get": {
+        "tags": ["Admin Export"],
+        "summary": "Export revenue report to Excel",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "start_date", "in": "query", "schema": { "type": "string", "format": "date" } },
+          { "name": "end_date", "in": "query", "schema": { "type": "string", "format": "date" } },
+          { "name": "timestamp", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Excel file download",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/orders": {
+      "get": {
+        "tags": ["Admin Orders"],
+        "summary": "Get all orders (alias for /admin/pesanan)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "per_page", "in": "query", "schema": { "type": "integer", "default": 15 } },
+          { "name": "status", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated orders",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": { "type": "array", "items": { "$ref": "#/components/schemas/Order" } },
+                    "links": { "type": "object" },
+                    "meta": { "type": "object" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/orders/{id}": {
+      "get": {
+        "tags": ["Admin Orders"],
+        "summary": "Get order detail (alias for /admin/pesanan/{id})",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Order detail",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": { "$ref": "#/components/schemas/Order" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/notifications": {
+      "get": {
+        "tags": ["Admin Notifications"],
+        "summary": "Get admin notifications",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "per_page", "in": "query", "schema": { "type": "integer", "default": 15 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated notifications",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": { "type": "array", "items": { "type": "object" } },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "current_page": { "type": "integer" },
+                        "total": { "type": "integer" },
+                        "unread_count": { "type": "integer" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Admin Notifications"],
+        "summary": "Create admin notification",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["title", "message"],
+                "properties": {
+                  "title": { "type": "string", "example": "Pesanan Baru" },
+                  "message": { "type": "string", "example": "Ada pesanan baru yang perlu diproses" },
+                  "pembayaran_id": { "type": "integer", "example": 1 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Notification created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "message": { "type": "string", "example": "Notification created" },
+                    "data": { "type": "object" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/notifications/{notification}/read": {
+      "post": {
+        "tags": ["Admin Notifications"],
+        "summary": "Mark admin notification as read",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "notification", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Notification marked as read",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "message": { "type": "string", "example": "Notification marked as read" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/notifications/read-all": {
+      "post": {
+        "tags": ["Admin Notifications"],
+        "summary": "Mark all admin notifications as read",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "All notifications marked as read",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "message": { "type": "string", "example": "All notifications marked as read" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
